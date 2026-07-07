@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>英語学習帳 PRO (Firebase版)</title>
+    <title id="study-title">多言語学習帳 PRO (Firebase版)</title>
     
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.png">
@@ -11,499 +11,336 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        /* ※スタイルシートは元のまま変更していません */
+        /* スタイルシートは元の洗練されたデザインをそのまま維持しています */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px 15px; margin: 0; user-select: none; -webkit-user-select: none; }
-        h1 { color: #333; font-size: 1.5rem; text-align: center; }
+        h1 { color: #333; font-size: 1.5rem; text-align: center; margin-bottom: 5px; }
         .view-section { display: none; width: 100%; max-width: 400px; }
         #view-title { display: block; }
-        .card-container { background-color: white; width: 100%; max-width: 400px; height: 220px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; margin-bottom: 20px; cursor: pointer; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        .card-container:active { transform: scale(0.96); }
-        .label { font-size: 0.9rem; color: #888; margin-bottom: 10px; }
-        .text { font-size: 1.8rem; font-weight: bold; color: #222; text-align: center; width: 100%; word-wrap: break-word; }
-        .english-text { color: #007bff; }
-        .btn-group { display: flex; gap: 8px; margin-bottom: 25px; width: 100%; max-width: 400px; }
-        button { flex: 1; padding: 14px 10px; font-size: 1rem; border: none; border-radius: 8px; font-weight: bold; touch-action: manipulation; transition: opacity 0.2s; }
-        button:active { opacity: 0.8; }
-        .btn-primary { background-color: #007bff; color: white; cursor: pointer; }
-        .btn-secondary { background-color: #6c757d; color: white; cursor: pointer; }
-        .btn-success { background-color: #28a745; color: white; cursor: pointer; }
-        .btn-warning { background-color: #ffc107; color: #333; cursor: pointer; }
-        .btn-delete { background-color: #dc3545; color: white; cursor: pointer; }
-        .form-container { background-color: white; width: 100%; max-width: 400px; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); box-sizing: border-box; margin-bottom: 20px; }
-        .form-group { display: flex; flex-direction: column; margin-bottom: 15px; }
-        .form-group label { margin-bottom: 5px; font-weight: bold; color: #555; }
-        .form-group input { padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
-        .list-container { background-color: white; width: 100%; max-width: 400px; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); box-sizing: border-box; margin-bottom: 40px; }
-        .list-container h2 { font-size: 1.2rem; margin-top: 0; color: #333; text-align: center; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; }
-        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee; }
-        .list-item:last-child { border-bottom: none; }
-        .item-text { display: flex; flex-direction: column; gap: 4px; word-break: break-all; margin-right: 10px; }
-        .item-ja { font-size: 0.9rem; color: #666; }
-        .item-en { font-size: 1.1rem; font-weight: bold; color: #007bff; }
-        .item-actions { display: flex; gap: 8px; flex-shrink: 0; }
-        .btn-small { padding: 8px 12px; font-size: 0.8rem; border-radius: 6px; flex: none; }
-        .btn-edit { background-color: #ffc107; color: #333; cursor: pointer; }
+        .card-container { background-color: white; width: 100%; max-width: 400px; height: 220px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; justify-content: center; align-items: center; position: relative; cursor: pointer; perspective: 1000px; margin-bottom: 25px; }
+        .card { width: 100%; height: 100%; position: absolute; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 15px; }
+        .card.flipped { transform: rotateY(180deg); }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 15px; padding: 20px; box-sizing: border-box; }
+        .card-front { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .card-back { background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%); color: #333; transform: rotateY(180deg); }
+        .word-text { font-size: 2rem; font-weight: bold; text-align: center; margin: 0; word-break: break-all; }
+        .meaning-text { font-size: 1.5rem; text-align: center; margin: 0; word-break: break-all; }
+        .btn-container { display: flex; justify-content: space-between; width: 100%; max-width: 400px; margin-bottom: 20px; gap: 10px; }
+        .btn { flex: 1; border: none; padding: 14px; border-radius: 10px; font-size: 1rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.1s, opacity 0.2s; color: white; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn:active { transform: scale(0.97); }
+        .btn-know { background-color: #2ecc71; }
+        .btn-unknown { background-color: #e74c3c; }
+        .btn-nav { background-color: #3498db; }
+        .btn-secondary { background-color: #95a5a6; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background-color: white; display: flex; justify-content: space-around; padding: 10px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 100; }
+        .nav-item { border: none; background: none; color: #7f8c8d; font-size: 0.8rem; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; width: 60px; }
+        .nav-item.active { color: #3498db; font-weight: bold; }
+        .nav-icon { font-size: 1.4rem; }
+        .form-group { background-color: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-weight: bold; color: #4a5568; font-size: 0.9rem; }
+        .form-group input, .form-group textarea { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; width: 100%; box-sizing: border-box; }
+        .word-list { width: 100%; max-width: 400px; margin-bottom: 80px; padding: 0; list-style: none; }
+        .word-item { background-color: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #e74c3c; }
+        .word-item.known { border-left-color: #2ecc71; }
+        .word-info { flex: 1; margin-right: 10px; }
+        .word-title { font-weight: bold; font-size: 1.1rem; margin: 0 0 4px 0; color: #2d3748; }
+        .word-desc { color: #718096; margin: 0; font-size: 0.95rem; }
+        .word-actions { display: flex; gap: 8px; }
+        .action-btn { border: none; background: none; cursor: pointer; font-size: 1.2rem; padding: 4px; border-radius: 4px; transition: background-color 0.2s; }
+        .action-btn:hover { background-color: #edf2f7; }
+        .speaker-btn { position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; font-size: 1.1rem; z-index: 10; }
+        .card-back .speaker-btn { color: #333; background: rgba(0,0,0,0.05); }
+        .banner { position: fixed; top: -60px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 12px 24px; border-radius: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-weight: bold; transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1000; font-size: 0.9rem; text-align: center; white-space: nowrap; }
+        .banner.success { background-color: #2ecc71; }
+        .banner.error { background-color: #e74c3c; }
+        .banner.info { background-color: #3498db; }
+        .banner.show { top: 20px; }
+        .auth-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 70vh; text-align: center; padding: 0 20px; }
+        .btn-google { background-color: white; color: #555; border: 1px solid #ccd0d5; padding: 12px 20px; border-radius: 8px; font-weight: bold; display: flex; align-items: center; gap: 10px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05); font-size: 1rem; margin-top: 20px; }
+        .user-profile { display: flex; align-items: center; gap: 10px; background: white; padding: 10px 15px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px; width: 100%; max-width: 370px; box-sizing: border-box; }
+        .user-avatar { width: 35px; height: 35px; border-radius: 50%; background-color: #ccc; }
+        .user-name { font-weight: bold; color: #333; flex: 1; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .btn-logout { background: none; border: 1px solid #e74c3c; color: #e74c3c; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+        .progress-container { width: 100%; height: 6px; background-color: #e2e8f0; border-radius: 3px; margin-top: 8px; overflow: hidden; }
+        .progress-bar { height: 100%; background-color: #3498db; width: 0%; transition: width 0.3s; }
+        .stats-text { font-size: 0.8rem; color: #718096; text-align: center; margin-top: 4px; }
+        .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-left: 5px; color: white; }
+        .badge-known { background-color: #2ecc71; }
+        .badge-unknown { background-color: #e74c3c; }
+        .lang-select-container { margin: 15px 0; text-align: center; width: 100%; max-width: 400px; }
+        .lang-select-label { font-weight: bold; color: #4a5568; display: block; margin-bottom: 6px; font-size: 0.9rem; text-align: left; padding-left: 5px; }
+        .lang-dropdown { padding: 12px; font-size: 1rem; border-radius: 10px; width: 100%; border: 1px solid #cbd5e1; background-color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.03); cursor: pointer; font-weight: bold; color: #333; }
     </style>
 </head>
 <body>
-    <div id="notification-banner" style="display:none; padding: 12px; text-align: center; color: white; border-radius: 8px; position: fixed; top: 10px; width: 90%; max-width: 400px; z-index: 1000; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
 
-    <div id="view-title" class="view-section" style="text-align: center; margin-top: 50px;">
-        <h1>🔥 英語学習帳 PRO</h1>
-        <p style="font-size: 1.2rem; margin: 30px 0;">連続学習: <strong style="color: #ff4757; font-size: 1.8rem;" id="streak-count">0</strong> 日目</p>
-        <div id="start-controls">
-            <p id="user-info" style="margin-bottom: 15px; color: #555; font-weight: bold;">通信中...</p>
-            <button id="login-btn" class="btn-primary" style="padding: 15px 40px; font-size: 1.2rem; width: 100%; margin-bottom: 10px; display: none;" onclick="loginWithGoogle()">Googleでログイン</button>
-            <button id="start-btn" class="btn-success" style="padding: 15px 40px; font-size: 1.2rem; width: 100%; margin-bottom: 10px; display: none;" onclick="startApp()">学習を始める</button>
-            <button id="logout-btn" class="btn-secondary" style="padding: 10px; width: 100%; display: none;" onclick="logout()">ログアウト</button>
-        </div>    
-   </div>
+    <div id="banner" class="banner">メッセージ</div>
 
-    <div id="view-dashboard" class="view-section">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h2 style="margin: 0;">統計ダッシュボード</h2>
-            <button class="btn-secondary" style="flex: none; padding: 6px 12px; font-size: 0.8rem; background-color: #6c757d;" onclick="showView('title')">トップに戻る</button>
-        </div>
-        <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
-            <canvas id="statusChart" style="max-height: 220px;"></canvas>
-        </div>
-        <button class="btn-warning" style="width: 100%; margin-bottom: 12px; padding: 15px; font-size: 1.05rem;" onclick="startQuiz('review')">⚠️ 復習が必要な項目を学習</button>
-        <button class="btn-primary" style="width: 100%; margin-bottom: 12px; padding: 15px; font-size: 1.05rem;" onclick="startQuiz('all')">📚 すべての項目を学習</button>
-        <button class="btn-secondary" style="width: 100%; margin-bottom: 20px; padding: 15px;" onclick="showView('study')">⚙️ 学習項目の追加・一覧管理</button>
+    <div id="view-login" class="view-section auth-container">
+        <h1 style="font-size: 2rem;">🌍 多言語学習帳 PRO</h1>
+        <p style="color: #666; margin-top: 10px;">自分だけの多言語単語帳をクラウド同期。PWA対応でいつでもどこでも復習可能。</p>
+        <button class="btn-google" onclick="loginWithGoogle()">
+            <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.79 2.7v2.25h2.91c1.7-1.56 2.68-3.86 2.68-6.58z" fill="#4285F4"/><path d="M9 18c2.43 0 4.47-.8 5.96-2.22l-2.91-2.25c-.8.54-1.83.87-3.05.87-2.35 0-4.35-1.59-5.06-3.73H.95v2.32C2.43 15.89 5.5 18 9 18z" fill="#34A853"/><path d="M3.94 10.67c-.18-.54-.28-1.12-.28-1.67s.1-1.13.28-1.67V5.02H.95C.35 6.22 0 7.57 0 9s.35 2.78.95 3.98l2.99-2.31z" fill="#FBBC05"/><path d="M9 3.58c1.32 0 2.5.45 3.44 1.35L15 2.3C13.46.94 11.42 0 9 0 5.5 0 2.43 2.11.95 5.02l2.99 2.32c.71-2.14 2.71-3.73 5.06-3.73z" fill="#EA4335"/></svg>
+            Googleアカウントでログイン
+        </button>
     </div>
 
-    <div id="view-study" class="view-section">
-        <button onclick="showView('dashboard')" style="margin-bottom: 15px; background:none; border:none; color:#007bff; cursor:pointer; font-size: 1rem; padding: 0;">← ダッシュボードに戻る</button>
-        <h1 id="study-title">英語学習帳</h1>
+    <div id="view-main-content" class="view-section">
         
-        <div class="card-container" id="card" onclick="toggleAnswer()">
-            <div class="label" id="card-label">日本語</div>
-            <div class="text" id="card-text">読み込み中...</div>
-        </div>
-        
-        <div class="btn-group" id="normal-controls">
-            <button class="btn-secondary" id="action-btn" onclick="toggleAnswer()">答え</button>
-            <button class="btn-primary" onclick="nextCard()">次へ</button>
-            <button class="btn-secondary" onclick="speakCurrentWord()">🔊</button>
+        <div class="user-profile">
+            <img id="user-photo" class="user-avatar" src="" alt="avatar">
+            <span id="user-display-name" class="user-name">ユーザー名</span>
+            <button class="btn-logout" onclick="logout()">ログアウト</button>
         </div>
 
-        <div id="quiz-controls" style="display: none; width: 100%; max-width: 400px; margin-bottom: 25px;">
-            <div style="display: flex; gap: 8px; width: 100%; margin-bottom: 8px;">
-                <button class="btn-warning" style="padding: 16px;" onclick="setWordStatus('review')">❌ 復習が必要</button>
-                <button class="btn-success" style="padding: 16px;" onclick="setWordStatus('learned')">✅ 覚えた！</button>
+        <div class="lang-select-container">
+            <label class="lang-select-label" for="lang-select">学習する言語を選択：</label>
+            <select id="lang-select" class="lang-dropdown">
+                <option value="en">英語 (English)</option>
+                <option value="de">ドイツ語 (Deutsch)</option>
+                <option value="fr">フランス語 (Français)</option>
+                <option value="zh">中国語 (简体中文)</option>
+                <option value="ko">韓国語 (한국어)</option>
+                <option value="ru">ロシア語 (Русский)</option>
+                <option value="es">スペイン語 (Español)</option>
+                <option value="pt">ポルトガル語 (Português)</option>
+            </select>
+        </div>
+
+        <div id="migration-box" style="text-align: center; margin: 10px 0 20px 0; background: #fff3cd; padding: 10px; border-radius: 10px; border: 1px solid #ffeeba;">
+            <p style="margin: 0 0 8px 0; font-size: 0.85rem; color: #856404; font-weight: bold;">⚠️ 旧方式の英語データを移行しますか？</p>
+            <button onclick="migrateEnglishData()" style="background-color: #ff9800; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
+                旧データを新方式(words_en)へ移行
+            </button>
+        </div>
+
+        <div id="view-title" class="view-section" style="display: block;">
+            <h1 id="app-title">🔥 英語学習帳 PRO</h1>
+            <div class="progress-container">
+                <div id="card-progress" class="progress-bar"></div>
             </div>
-            <button class="btn-secondary" style="width: 100%; padding: 12px;" onclick="speakCurrentWord()">🔊 発音を聞く</button>
-        </div>
-        
-        <div class="form-container" id="register-form">
-            <form onsubmit="handleAddWord(event)">
-                <div class="form-group">
-                    <label for="input-ja">日本語訳</label>
-                    <input type="text" id="input-ja" placeholder="例: りんご" required>
+            <div id="card-stats" class="stats-text">0 / 0 (0%)</div>
+            <br>
+            <div class="card-container" onclick="toggleAnswer()">
+                <div id="flashcard" class="card">
+                    <div class="card-face card-front">
+                        <button class="speaker-btn" onclick="speakCurrentWord(event)">🔊</button>
+                        <p id="card-word" class="word-text">読み込み中...</p>
+                    </div>
+                    <div class="card-face card-back">
+                        <button class="speaker-btn" onclick="speakCurrentWord(event)">🔊</button>
+                        <p id="card-meaning" class="meaning-text">読み込み中...</p>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="input-en">英訳</label>
-                    <input type="text" id="input-en" placeholder="例: apple" required>
-                </div>
-                <button type="submit" class="btn-primary" style="width: 100%;">登録する</button>
-            </form>
+            </div>
+            <div class="btn-container">
+                <button class="btn btn-unknown" onclick="setWordStatus(false)">❌ 知らない</button>
+                <button class="btn btn-know" onclick="setWordStatus(true)"> Untersch. 🟩 知ってる</button>
+            </div>
+            <div class="btn-container">
+                <button class="btn btn-nav" onclick="nextCard()">⏭️ パス / 次へ</button>
+            </div>
         </div>
 
-        <div class="list-container" id="list-container">
-            <h2>登録済み学習項目一覧</h2>
-            <div id="word-list">読み込み中...</div>
+        <div id="view-dashboard" class="view-section">
+            <h1>📊 学習進捗ダッシュボード</h1>
+            <div style="background-color: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px;">
+                <canvas id="progressChart" width="400" height="400"></canvas>
+            </div>
         </div>
+
+        <div id="view-manage" class="view-section">
+            <h1>📝 単語帳管理・登録</h1>
+            <form id="word-form" onsubmit="handleAddWord(event)">
+                <input type="hidden" id="edit-id">
+                <div class="form-group">
+                    <label for="input-word">外国語単語</label>
+                    <input type="text" id="input-word" placeholder="例: apple" required>
+                </div>
+                <div class="form-group">
+                    <label for="input-en" id="label-en">英訳</label>
+                    <input type="text" id="input-en" placeholder="例: りんご" required>
+                </div>
+                <button type="submit" id="btn-submit" class="btn btn-nav" style="width:100%; margin-top:10px;">➕ 単語を追加する</button>
+                <button type="button" id="btn-cancel-edit" class="btn btn-secondary" style="width:100%; margin-top:5px; display:none;" onclick="cancelEdit()">キャンセル</button>
+            </form>
+            <h2 style="font-size: 1.1rem; color: #4a5568; margin-top: 20px;">登録単語一覧 (<span id="total-count">0</span>)</h2>
+            <ul id="word-list" class="word-list"></ul>
+        </div>
+
+        <nav class="bottom-nav">
+            <button id="nav-title" class="nav-item active" onclick="showView('title')">
+                <span class="nav-icon">📇</span>単語カード
+            </button>
+            <button id="nav-dashboard" class="nav-item" onclick="showView('dashboard')">
+                <span class="nav-icon">📊</span>分析
+            </button>
+            <button id="nav-manage" class="nav-item" onclick="showView('manage')">
+                <span class="nav-icon">📝</span>管理
+            </button>
+        </nav>
+
     </div>
 
     <script type="module">
-         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy } 
-        from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } 
-        from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot, addDoc, doc, updateDoc, deleteDoc, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        
+        // 💡 多言語設定ファイルのインポート
+        import { LANGUAGES } from "./languages.js";
 
-        // ==========================================
-        // ⚠️ ここにご自身のFirebaseの設定を貼り付けてください
-        // ==========================================
+        // Firebase設定（ご自身の環境のキーに置き換えてください）
         const firebaseConfig = {
-            apiKey: "AIzaSyCWdPfVhmQ0MgYGQNnfkvAzNiC9dX7ZXtg",
-            authDomain: "learning-languages-public.firebaseapp.com",
-            projectId: "learning-languages-public",
-            storageBucket: "learning-languages-public.firebasestorage.app",
-            messagingSenderId: "250498492118",
-            appId: "1:250498492118:web:e3d0e3d09a357816778b77"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
-        // Firebase初期化
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
         const auth = getAuth(app);
+        const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
+
+        // 状態管理変数
         let currentUser = null;
-
-        // 変数管理
-        let words = []; 
-        let quizWords = []; 
-        let currentIndex = 0;
-        let isShowingAnswer = false;
+        let words = [];
+        let currentCardIndex = 0;
         let currentMode = 'manage'; 
-        let chartInstance = null;
-        let isFirebaseInitialized = false;
+        let myChart = null;
+        
+        // 💡 多言語管理用変数
+        let currentLang = 'en';
+        let unsubscribeFirebase = null;
 
-        // 【バナー通知機能】
-        function showBanner(message, type = 'success') {
-            const banner = document.getElementById('notification-banner');
-            banner.innerText = message;
-            banner.style.display = 'block';
-            if (type === 'success') banner.style.backgroundColor = '#28a745';
-            else if (type === 'error') banner.style.backgroundColor = '#dc3545';
-            else if (type === 'info') banner.style.backgroundColor = '#007bff';
-            setTimeout(() => { banner.style.display = 'none'; }, 3000);
-        }
-
-        function escapeHTML(str) {
-            return str.replace(/[&<>'"]/g, function(tag) {
-                const charsToReplace = { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' };
-                return charsToReplace[tag] || tag;
-            });
-        }
         // 【認証状態の監視】
         onAuthStateChanged(auth, (user) => {
-            const userInfo = document.getElementById('user-info');
-            const loginBtn = document.getElementById('login-btn');
-            const startBtn = document.getElementById('start-btn');
-            const logoutBtn = document.getElementById('logout-btn');
-
             if (user) {
-                // ログインしている時
                 currentUser = user;
-                userInfo.innerText = `👤 ${user.displayName} さん`;
-                loginBtn.style.display = 'none';
-                startBtn.style.display = 'block';
-                logoutBtn.style.display = 'block';
+                document.getElementById('user-photo').src = user.photoURL || '';
+                document.getElementById('user-display-name').innerText = user.displayName || 'ユーザー';
+                document.getElementById('view-login').style.display = 'none';
+                document.getElementById('view-main-content').style.display = 'block';
+                
+                // 💡 初期のUI文字更新とFirebase同期の開始
+                updateUIForLanguage();
+                initFirebaseSync();
             } else {
-                // ログアウトしている時
                 currentUser = null;
-                userInfo.innerText = "未ログイン";
-                loginBtn.style.display = 'block';
-                startBtn.style.display = 'none';
-                logoutBtn.style.display = 'none';
+                if (unsubscribeFirebase) unsubscribeFirebase();
+                document.getElementById('view-login').style.display = 'flex';
+                document.getElementById('view-main-content').style.display = 'none';
             }
         });
 
-        // 【ログイン処理】
+        // 【Googleログイン・ログアウト】
         async function loginWithGoogle() {
             try {
                 await signInWithPopup(auth, provider);
                 showBanner("ログインしました", "success");
-            } catch (error) {
-                console.error(error);
+            } catch (e) {
+                console.error(e);
                 showBanner("ログインに失敗しました", "error");
             }
         }
-
-        // 【ログアウト処理】
         async function logout() {
             try {
                 await signOut(auth);
                 showBanner("ログアウトしました", "success");
-                showView('title'); // トップ画面に戻る
-                words = []; // データをクリア
-                isFirebaseInitialized = false;
-            } catch (error) {
-                console.error(error);
+            } catch (e) {
+                console.error(e);
             }
         }
-        // 【Firebaseリアルタイム同期】
-        function initFirebaseSync() {
-            if (isFirebaseInitialized) return;
+
+        // 💡 【言語切り替えイベントの処理】
+        document.getElementById('lang-select').addEventListener('change', (e) => {
+            currentLang = e.target.value;
+            updateUIForLanguage();
+            initFirebaseSync(); // データベースの読み込み先を瞬時に切り替える
+        });
+
+        // 💡 【言語に基づいたUI文字の書き換え】
+        function updateUIForLanguage() {
+            const config = LANGUAGES[currentLang];
+            document.getElementById('app-title').innerText = `🔥 ${config.title}`;
+            document.getElementById('study-title').innerText = config.title;
+            document.getElementById('label-en').innerText = config.label;
+            document.getElementById('input-en').placeholder = config.placeholder;
             
-            const wordsCollection = collection(db, 'users', currentUser.uid, 'words');
-            // 作成日時順で並び替えるクエリ（任意）
+            // フォームのリセットとビューの再調整
+            document.getElementById('word-form').reset();
+            cancelEdit();
+        }
+
+        // 💡 【Firebaseリアルタイム同期の初期化】
+        function initFirebaseSync() {
+            if (unsubscribeFirebase) {
+                unsubscribeFirebase(); // 古い言語の同期リスナーを解除
+            }
+            
+            const config = LANGUAGES[currentLang];
+            // ユーザーごとの言語別サブコレクションを動的に参照
+            const wordsCollection = collection(db, 'users', currentUser.uid, config.collectionSuffix);
             const q = query(wordsCollection, orderBy('createdAt', 'desc'));
 
-            onSnapshot(q, (snapshot) => {
+            unsubscribeFirebase = onSnapshot(q, (snapshot) => {
                 words = [];
                 snapshot.forEach((doc) => {
                     words.push({ id: doc.id, ...doc.data() });
                 });
                 
-                // 画面が管理モードの場合のみ即時反映
-                if (currentMode === 'manage') {
-                    renderList();
-                    updateCard();
-                    if (document.getElementById('view-dashboard').style.display === 'block') {
-                        updateChart();
-                    }
+                // 画面パーツの再描画
+                renderList();
+                updateCard();
+                if (document.getElementById('view-dashboard').style.display === 'block') {
+                    updateChart();
                 }
             }, (error) => {
                 console.error("Firestore同期エラー: ", error);
                 showBanner("データの読み込みに失敗しました", "error");
             });
-
-            isFirebaseInitialized = true;
         }
 
-        // 【アプリ開始】
-        function startApp() {
-            checkStreak();
-            initFirebaseSync();
-            showView('dashboard');
-        }
+        // 【Firestore Add/Update: 単語の追加・修正】
+        async function handleAddWord(e) {
+            e.preventDefault();
+            const word = document.getElementById('input-word').value.trim();
+            const meaning = document.getElementById('input-en').value.trim();
+            const editId = document.getElementById('edit-id').value;
 
-        // 【画面切替機能】
-        function showView(viewId) {
-            document.querySelectorAll('.view-section').forEach(view => {
-                view.style.display = 'none';
-            });
-            document.getElementById('view-' + viewId).style.display = 'block';
-            
-            if (viewId === 'dashboard') updateChart();
-            if (viewId === 'study' && currentMode === 'manage') {
-                document.getElementById('study-title').innerText = "学習項目の追加・一覧管理";
-                document.getElementById('register-form').style.display = 'block';
-                document.getElementById('list-container').style.display = 'block';
-                document.getElementById('normal-controls').style.display = 'flex';
-                document.getElementById('quiz-controls').style.display = 'none';
-                updateCard();
-            }
-        }
+            if (!word || !meaning) return;
 
-        // 【ストリーク（連続学習日数）計算】※これのみローカル保持
-        function checkStreak() {
-            const today = new Date().toLocaleDateString();
-            const lastDate = localStorage.getItem('lastStudyDate');
-            let streak = parseInt(localStorage.getItem('studyStreak') || '0');
-            if (lastDate !== today) {
-                const yesterday = new Date();
-                yesterday.setDate(yesterday.getDate() - 1);
-                if (lastDate === yesterday.toLocaleDateString()) {
-                    streak += 1;
-                } else if (!lastDate) {
-                    streak = 1;
-                } else {
-                    streak = 1;
-                }
-                localStorage.setItem('lastStudyDate', today);
-                localStorage.setItem('studyStreak', streak);
-            }
-            document.getElementById('streak-count').innerText = streak;
-        }
+            const config = LANGUAGES[currentLang];
+            const wordsCollection = collection(db, 'users', currentUser.uid, config.collectionSuffix);
 
-        // 【グラフ描画機能】
-        function updateChart() {
-            const total = words.length;
-            const learned = words.filter(w => w.status === 'learned').length;
-            const review = total - learned;
-            const ctx = document.getElementById('statusChart').getContext('2d');
-            if (chartInstance) chartInstance.destroy();
-            chartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: [`✅ 覚えた (${learned})`, `⚠️ 要復習 (${review})`],
-                    datasets: [{ data: [learned, review], backgroundColor: ['#28a745', '#ffc107'], borderWidth: 2 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-            });
-        }
-
-        // 【クイズ開始処理】
-        function startQuiz(mode) {
-            currentMode = mode;
-            isShowingAnswer = false;
-            currentIndex = 0;
-            if (mode === 'review') {
-                quizWords = words.filter(w => w.status !== 'learned');
-                document.getElementById('study-title').innerText = "⚠️ 復習クイズ";
-            } else {
-                quizWords = [...words];
-                document.getElementById('study-title').innerText = "📚 全項目クイズ";
-            }
-            if (quizWords.length === 0) {
-                showBanner("学習する項目がありません！", "error");
-                currentMode = 'manage';
-                return;
-            }
-            document.getElementById('register-form').style.display = 'none';
-            document.getElementById('list-container').style.display = 'none';
-            document.getElementById('normal-controls').style.display = 'none';
-            document.getElementById('quiz-controls').style.display = 'block';
-            showView('study');
-            updateCard();
-        }
-
-        // 【Firestore: 仕分けステータス保存】
-        async function setWordStatus(status) {
-            const currentList = currentMode === 'manage' ? words : quizWords;
-            if (currentList.length === 0) return;
-            
-            const currentWord = currentList[currentIndex];
-            
-            try {
-                // Firebaseを更新
-                 const wordRef = doc(db, 'users', currentUser.uid, 'words', currentWord.id);
-                await updateDoc(wordRef, { status: status });
-
-                if (status === 'learned') showBanner("「覚えた！」に移動しました", "success");
-                else showBanner("「要復習」に移動しました", "info");
-                
-                isShowingAnswer = false;
-                currentIndex++;
-                
-                if (currentIndex >= currentList.length) {
-                    showBanner("完了！ダッシュボードに戻ります。", "success");
-                    currentMode = 'manage';
-                    setTimeout(() => showView('dashboard'), 1500);
-                } else {
-                    updateCard();
-                }
-            } catch (e) {
-                console.error(e);
-                showBanner("ステータスの更新に失敗しました", "error");
-            }
-        }
-
-        // 【カード表示更新】
-        function updateCard() {
-            const currentList = currentMode === 'manage' ? words : quizWords;
-            if (currentList.length === 0) {
-                document.getElementById('card-text').innerText = "学習項目がありません";
-                document.getElementById('card-label').innerText = "-";
-                return;
-            }
-            if (currentIndex >= currentList.length) currentIndex = 0;
-            const currentWord = currentList[currentIndex];
-            const textElement = document.getElementById('card-text');
-            const labelElement = document.getElementById('card-label');
-            const actionBtn = document.getElementById('action-btn');
-
-            if (!isShowingAnswer) {
-                labelElement.innerText = "日本語";
-                textElement.innerText = currentWord.ja;
-                textElement.classList.remove('english-text');
-                if (actionBtn) actionBtn.innerText = "答え";
-            } else {
-                labelElement.innerText = "英訳";
-                textElement.innerText = currentWord.en;
-                textElement.classList.add('english-text');
-                if (actionBtn) actionBtn.innerText = "戻す";
-                speak(currentWord.en);
-            }
-        }
-
-        function toggleAnswer() {
-            const currentList = currentMode === 'manage' ? words : quizWords;
-            if (currentList.length === 0) return;
-            isShowingAnswer = !isShowingAnswer;
-            updateCard();
-        }
-
-        function nextCard() {
-            const currentList = currentMode === 'manage' ? words : quizWords;
-            if (currentList.length === 0) return;
-            isShowingAnswer = false;
-            currentIndex = (currentIndex + 1) % currentList.length;
-            updateCard();
-        }
-
-        // 【音声合成】
-        function speak(text) {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'en-US';
-            window.speechSynthesis.speak(utterance);
-        }
-
-        function speakCurrentWord() {
-            const currentList = currentMode === 'manage' ? words : quizWords;
-            if (currentList.length === 0) return;
-            speak(currentList[currentIndex].en);
-        }
-
-        function handleAddWord(event) {
-            event.preventDefault();
-            addWord();
-        }
-
-        // 【Firestore Create: 学習項目を追加する】
-        async function addWord() {
-            const jaText = document.getElementById('input-ja').value.trim();
-            const enText = document.getElementById('input-en').value.trim();
-            if (!jaText || !enText) { showBanner("両方入力してください。", "error"); return; }
-            
-            try {
-                await addDoc(collection(db, 'users', currentUser.uid, 'words'), {
-                    ja: jaText,
-                    en: enText,
-                    status: 'review',
-                    createdAt: serverTimestamp() // 並び替え用に作成日時を記録
-                });
-                
-                document.getElementById('input-ja').value = '';
-                document.getElementById('input-en').value = '';
-                document.getElementById('input-ja').focus();
-                showBanner("学習項目を追加しました！", "success");
-            } catch (e) {
-                console.error(e);
-                showBanner("追加に失敗しました", "error");
-            }
-        }
-
-        // 【Read: 一覧を表示する】
-        function renderList() {
-            const listDiv = document.getElementById('word-list');
-            listDiv.innerHTML = '';
-            
-            if (words.length === 0) {
-                listDiv.innerHTML = '<p style="text-align:center; color:#666;">まだ単語が登録されていません</p>';
-                return;
-            }
-
-            words.forEach((word) => {
-                const statusBadge = word.status === 'learned' 
-                    ? '<span style="color:#28a745; font-size:0.8rem;">[覚えた]</span>' 
-                    : '<span style="color:#ffc107; font-size:0.8rem;">[要復習]</span>';
-                const safeJa = escapeHTML(word.ja);
-                const safeEn = escapeHTML(word.en);
-                const item = document.createElement('div');
-                item.className = 'list-item';
-                item.innerHTML = `
-                    <div class="item-text">
-                        <span class="item-ja">${safeJa} ${statusBadge}</span>
-                        <span class="item-en">${safeEn}</span>
-                    </div>
-                    <div class="item-actions">
-                        <button class="btn-small btn-edit" onclick="editWord('${word.id}')">編集</button>
-                        <button class="btn-small btn-delete" onclick="deleteWord('${word.id}')">削除</button>
-                    </div>
-                `;
-                listDiv.appendChild(item);
-            });
-        }
-
-        // 【Firestore Update: データを修正する】
-        async function editWord(id) {
-            const word = words.find(w => w.id === id);
-            if (!word) return;
-            const newJa = prompt("新しい日本語訳を入力してください:", word.ja);
-            if (newJa === null) return;
-            const newEn = prompt("新しい英訳を入力してください:", word.en);
-            if (newEn === null) return;
-
-            if (newJa.trim() !== "" && newEn.trim() !== "") {
+            if (editId) {
+                // 修正モード
                 try {
-                    const wordRef = doc(db, 'users', currentUser.uid, 'words', id);
-                    await updateDoc(wordRef, {
-                        ja: newJa.trim(),
-                        en: newEn.trim()
-                    });
+                    const wordRef = doc(db, 'users', currentUser.uid, config.collectionSuffix, editId);
+                    await updateDoc(wordRef, { word, meaning });
                     showBanner("修正しました！", "success");
+                    cancelEdit();
                 } catch(e) {
                     console.error(e);
                     showBanner("修正に失敗しました", "error");
                 }
             } else {
-                showBanner("文字を入力してください。", "error");
+                // 新規追加モード
+                try {
+                    await addDoc(wordsCollection, {
+                        word,
+                        meaning,
+                        known: false,
+                        createdAt: new Date().getTime()
+                    });
+                    showBanner("追加しました！", "success");
+                    document.getElementById('word-form').reset();
+                } catch(e) {
+                    console.error(e);
+                    showBanner("追加に失敗しました", "error");
+                }
             }
         }
 
@@ -511,9 +348,11 @@
         async function deleteWord(id) {
             if (confirm("本当にこの項目を削除しますか？")) {
                 try {
-                    const wordRef = doc(db, 'users', currentUser.uid, 'words', id);
+                    const config = LANGUAGES[currentLang];
+                    const wordRef = doc(db, 'users', currentUser.uid, config.collectionSuffix, id);
                     await deleteDoc(wordRef);
                     showBanner("削除しました！", "success");
+                    if (editId === id) cancelEdit();
                 } catch(e) {
                     console.error(e);
                     showBanner("削除に失敗しました", "error");
@@ -521,22 +360,252 @@
             }
         }
 
-        // HTML側のイベントから呼べるようにwindowオブジェクトに登録
-        window.startApp = startApp;
+        // 【単語帳カードの表示更新】
+        function updateCard() {
+            const flashcard = document.getElementById('flashcard');
+            flashcard.classList.remove('flipped');
+
+            const filteredWords = words; 
+            const total = filteredWords.length;
+
+            if (total === 0) {
+                document.getElementById('card-word').innerText = "単語がありません";
+                document.getElementById('card-meaning').innerText = "管理画面から追加してください";
+                document.getElementById('card-stats').innerText = "0 / 0 (0%)";
+                document.getElementById('card-progress').style.width = "0%";
+                return;
+            }
+
+            if (currentCardIndex >= total) {
+                currentCardIndex = 0;
+            }
+
+            const currentWord = filteredWords[currentCardIndex];
+            document.getElementById('card-word').innerText = currentWord.word;
+            document.getElementById('card-meaning').innerText = currentWord.meaning;
+
+            const knownCount = filteredWords.filter(w => w.known).length;
+            const percent = Math.round((knownCount / total) * 100);
+            document.getElementById('card-stats').innerText = `${knownCount} / ${total} 習得済み (${percent}%)`;
+            document.getElementById('card-progress').style.width = `${percent}%`;
+        }
+
+        // 【カードをめくる】
+        function toggleAnswer() {
+            document.getElementById('flashcard').classList.toggle('flipped');
+        }
+
+        // 【知ってる・知らないのステータス更新】
+        async function setWordStatus(isKnown) {
+            if (words.length === 0) return;
+            const currentWord = words[currentCardIndex];
+            
+            try {
+                const config = LANGUAGES[currentLang];
+                const wordRef = doc(db, 'users', currentUser.uid, config.collectionSuffix, currentWord.id);
+                await updateDoc(wordRef, { known: isKnown });
+                
+                showBanner(isKnown ? "🟩 習得に設定しました" : "❌ 未習得に設定しました", "info");
+                nextCard();
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        // 【次のカードへ】
+        function nextCard() {
+            if (words.length === 0) return;
+            currentCardIndex = (currentCardIndex + 1) % words.length;
+            updateCard();
+        }
+
+        // 💡 【音声読み上げ機能（多言語対応版）】
+        function speakCurrentWord(event) {
+            event.stopPropagation(); // カードがめくれてしまうのを防止
+            if (words.length === 0) return;
+            
+            const currentWord = words[currentCardIndex];
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(currentWord.word);
+            
+            // 💡 現在選択されている言語コードを適用
+            utterance.lang = LANGUAGES[currentLang].speechLang;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // 【管理画面：登録一覧リストのレンダリング】
+        function renderList() {
+            const listEl = document.getElementById('word-list');
+            listEl.innerHTML = '';
+            document.getElementById('total-count').innerText = words.length;
+
+            words.forEach((w) => {
+                const li = document.createElement('li');
+                li.className = `word-item ${w.known ? 'known' : ''}`;
+                
+                li.innerHTML = `
+                    <div class="word-info">
+                        <p class="word-title">${escapeHtml(w.word)} ${w.known ? '<span class="badge badge-known">習得済</span>' : '<span class="badge badge-unknown">未習得</span>'}</p>
+                        <p class="word-desc">${escapeHtml(w.meaning)}</p>
+                    </div>
+                    <div class="word-actions">
+                        <button class="action-btn" onclick="editWord('${w.id}', '${escapeJs(w.word)}', '${escapeJs(w.meaning)}')">✏️</button>
+                        <button class="action-btn" onclick="deleteWord('${w.id}')">🗑️</button>
+                    </div>
+                `;
+                listEl.appendChild(li);
+            });
+        }
+
+        // 【編集モードの切り替え】
+        function editWord(id, word, meaning) {
+            document.getElementById('edit-id').value = id;
+            document.getElementById('input-word').value = word;
+            document.getElementById('input-en').value = meaning;
+            document.getElementById('btn-submit').innerText = "💾 修正を保存する";
+            document.getElementById('btn-cancel-edit').style.display = "block";
+            document.getElementById('word-form').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function cancelEdit() {
+            document.getElementById('edit-id').value = '';
+            document.getElementById('input-word').value = '';
+            document.getElementById('input-en').value = '';
+            document.getElementById('btn-submit').innerText = "➕ 単語を追加する";
+            document.getElementById('btn-cancel-edit').style.display = "none";
+        }
+
+        // 【ダッシュボード：Chart.jsによるグラフ描写】
+        function updateChart() {
+            const total = words.length;
+            const known = words.filter(w => w.known).length;
+            const unknown = total - known;
+
+            const ctx = document.getElementById('progressChart').getContext('2d');
+            
+            if (myChart) {
+                myChart.destroy(); // グラフの重複描写防止
+            }
+
+            myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['習得済み', '未習得'],
+                    datasets: [{
+                        data: [known, total === 0 ? 1 : unknown], // 0件の時はグレーの円を表示
+                        backgroundColor: [
+                            total === 0 ? '#e2e8f0' : '#2ecc71',
+                            '#e74c3c'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // 💡 【旧データ移行スクリプト（1回限り実行用）】
+        async function migrateEnglishData() {
+            if (!currentUser) { showBanner("ログインしてください", "error"); return; }
+            if (!confirm("以前登録した古い方式の英語データを、新しいフォルダ（words_en）に引越しします。よろしいですか？\n※移行後、古い場所のデータは自動的に安全削除されます。")) return;
+
+            showBanner("データ移行を実行中...", "info");
+            const oldCollectionRef = collection(db, 'users', currentUser.uid, 'words');
+            const newCollectionRef = collection(db, 'users', currentUser.uid, 'words_en');
+
+            try {
+                const querySnapshot = await getDocs(oldCollectionRef);
+                if (querySnapshot.empty) {
+                    showBanner("移行する古いデータが見つかりませんでした。", "error");
+                    document.getElementById('migration-box').style.display = 'none';
+                    return;
+                }
+
+                const batch = writeBatch(db);
+                let count = 0;
+
+                querySnapshot.forEach((documentSnapshot) => {
+                    const data = documentSnapshot.data();
+                    const docId = documentSnapshot.id;
+                    batch.set(doc(newCollectionRef, docId), data); // 新しいコレクションにコピー
+                    batch.delete(documentSnapshot.ref);            // 古いコレクションから削除
+                    count++;
+                });
+
+                await batch.commit();
+                showBanner(`${count}件の英単語データを新方式へ移行しました！`, "success");
+                document.getElementById('migration-box').style.display = 'none';
+                initFirebaseSync();
+            } catch (error) {
+                console.error("移行エラー: ", error);
+                showBanner("移行に失敗しました。コンソールログを確認してください。", "error");
+            }
+        }
+
+        // 【画面切り替えナビゲーション】
+        function showView(viewId) {
+            currentMode = viewId;
+            document.querySelectorAll('.view-section').forEach(el => {
+                if(el.id !== 'view-main-content') el.style.display = 'none';
+            });
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(`view-${viewId}`).style.display = 'block';
+            document.getElementById(`nav-${viewId}`).classList.add('active');
+
+            if (viewId === 'dashboard') {
+                updateChart();
+            } else if (viewId === 'title') {
+                updateCard();
+            }
+        }
+
+        // ユーティリティ（バナー通知と文字列エスケープ）
+        function showBanner(message, type = 'success') {
+            const banner = document.getElementById('banner');
+            banner.innerText = message;
+            banner.className = `banner ${type} show`;
+            setTimeout(() => { banner.classList.remove('show'); }, 3000);
+        }
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        function escapeJs(str) {
+            if (!str) return '';
+            return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+        }
+
+        // グローバル関数をwindowへ紐付け（HTMLのonclick属性用）
+        window.loginWithGoogle = loginWithGoogle;
+        window.logout = logout;
         window.showView = showView;
-        window.startQuiz = startQuiz;
-        window.setWordStatus = setWordStatus;
         window.toggleAnswer = toggleAnswer;
+        window.setWordStatus = setWordStatus;
         window.nextCard = nextCard;
         window.speakCurrentWord = speakCurrentWord;
         window.handleAddWord = handleAddWord;
         window.editWord = editWord;
         window.deleteWord = deleteWord;
-        window.loginWithGoogle = loginWithGoogle;
-        window.logout = logout;
-        window.addEventListener('DOMContentLoaded', () => {
-            checkStreak();
-        });
+        window.cancelEdit = cancelEdit;
+        window.migrateEnglishData = migrateEnglishData;
+
+    </script>
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker 登録成功:', reg.scope))
+                    .catch(err => console.log('Service Worker 登録失敗:', err));
+            });
+        }
     </script>
 </body>
 </html>

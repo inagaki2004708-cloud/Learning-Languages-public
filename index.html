@@ -7,7 +7,7 @@
     
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.png">
-    <link rel="icon" href="icon.png" type="image/png"> ```
+    <link rel="icon" href="icon.png" type="image/png"> 
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -86,11 +86,9 @@
             <button class="btn btn-primary" id="btn-mode-all" style="flex:1; font-size: 0.9rem;" onclick="setQuizMode('all')">全問題</button>
             <button class="btn btn-secondary" id="btn-mode-review" style="flex:1; font-size: 0.9rem;" onclick="setQuizMode('review')">不正解・未学習を復習</button>
         </div>
-        <div class="card-container" id="word-card" onclick="toggleAnswer()">
-
-        <div class="card-container" id="word-card" onclick="toggleAnswer()">
-            <div class="card-inner">
-                <div class="card-front">
+          <div class="card-container" id="word-card" onclick="toggleAnswer()">
+    <div class="card-inner">              
+       <div class="card-front">
                     <div class="word-text" id="card-front-text">読み込み中...</div>
                     <button class="btn btn-secondary" onclick="event.stopPropagation(); speakCurrentWord();" style="padding: 5px 12px; font-size: 0.8rem; border-radius: 15px; margin-top:5px;">🔊 発音を聴く</button>
                 </div>
@@ -572,9 +570,7 @@
         window.cancelEdit = cancelEdit;
         window.migrateEnglishData = migrateEnglishData;
         window.handleLangChange = handleLangChange;
-        window.setQuizMode = setQuizMode; 
-    </script>
-    // 💡 追加：クイズモードの切り替え関数
+         // 💡 修正：正しく <script> の内側に配置
         function setQuizMode(mode) {
             currentMode = mode;
             
@@ -590,10 +586,13 @@
                 quizWords = [...wordsData]; // 全問題をコピー
             }
 
-        setQuizMode(currentMode); 
-        renderWordList();
-        updateChart();
+            currentIndex = 0;
+            renderCard();
         }
+
+        window.setQuizMode = setQuizMode; 
+    </script>
+
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

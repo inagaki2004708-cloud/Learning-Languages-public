@@ -82,6 +82,12 @@
             <canvas id="progressChart"></canvas>
         </div>
 
+        <div class="controls" style="margin-bottom: 15px; gap: 10px;">
+            <button class="btn btn-primary" id="btn-mode-all" style="flex:1; font-size: 0.9rem;" onclick="setQuizMode('all')">全問題</button>
+            <button class="btn btn-secondary" id="btn-mode-review" style="flex:1; font-size: 0.9rem;" onclick="setQuizMode('review')">不正解・未学習を復習</button>
+        </div>
+        <div class="card-container" id="word-card" onclick="toggleAnswer()">
+
         <div class="card-container" id="word-card" onclick="toggleAnswer()">
             <div class="card-inner">
                 <div class="card-front">
@@ -171,6 +177,8 @@
         let currentUser = null;
         let currentLang = 'en';
         let wordsData = [];
+        let quizWords = [];              
+        let currentMode = 'all';         
         let currentIndex = 0;
         let chartInstance = null;
 
@@ -268,26 +276,27 @@
             updateChart();
         }
 
-        // カード描画処理
+         // 💡 差し替え：カード描画処理（quizWordsを使うように変更）
         function renderCard() {
             const card = document.getElementById('word-card');
             card.classList.remove('flipped');
             document.getElementById('card-controls').style.display = 'none';
 
-            if (wordsData.length === 0) {
-                document.getElementById('card-front-text').textContent = "学習項目データがありません";
+            if (quizWords.length === 0) {
+                document.getElementById('card-front-text').textContent = currentMode === 'review' ? "復習完了🎉" : "学習項目データがありません";
                 document.getElementById('card-back-text').textContent = "";
                 return;
             }
 
-            if (currentIndex >= wordsData.length) currentIndex = 0;
-            const current = wordsData[currentIndex];
+            if (currentIndex >= quizWords.length) currentIndex = 0;
+            const current = quizWords[currentIndex];
             document.getElementById('card-front-text').textContent = current.word;
             document.getElementById('card-back-text').textContent = current.meaning;
         }
 
+        // 💡 差し替え：(quizWordsを使うように変更)
         function toggleAnswer() {
-            if (wordsData.length === 0) return;
+            if (quizWords.length === 0) return;
             const card = document.getElementById('word-card');
             card.classList.toggle('flipped');
             
@@ -295,10 +304,12 @@
             controls.style.display = card.classList.contains('flipped') ? 'flex' : 'none';
         }
 
-        // クイズステータス設定
+         // 💡 修正版：クイズステータス設定（スパルタ仕様：復習モードで正解なら即除外）
         async function setWordStatus(status) {
-            if (wordsData.length === 0) return;
-            const current = wordsData[currentIndex];
+            if (quizWords.length === 0) return;
+            
+            // 現在のインデックスにある単語を取得
+            const current = quizWords[currentIndex];
             const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
             const docRef = doc(db, langConfig.collectionSuffix, current.id);
 
@@ -306,6 +317,7 @@
             const nCorrect = (current.correctCount || 0) + (status === 'correct' ? 1 : 0);
 
             try {
+                // Firebase（Firestore）のデータを更新
                 await updateDoc(docRef, {
                     reviewCount: nReview,
                     correctCount: nCorrect,
@@ -313,35 +325,57 @@
                     updatedAt: new Date()
                 });
                 
+                // ローカル（メモリ内）の全データ（wordsData）の状態も同期
                 current.reviewCount = nReview;
                 current.correctCount = nCorrect;
                 current.status = status;
                 
+                // 下部の単語リストとグラフを即座に再描画
+                renderWordList();
+                updateChart();
+                
                 showBanner(status === 'correct' ? "正解 ⭕" : "チェックしました ❌", "success");
-                nextCard();
+
+                // 🔥【スパルタ仕様】復習モード、かつ「正解」の場合、現在のクイズリストから即座に除外
+                if (currentMode === 'review' && status === 'correct') {
+                    quizWords.splice(currentIndex, 1); // 配列から1件削除
+                    
+                    // 単語を削除した結果、インデックスが配列の長さを超えてしまったら0に戻す
+                    if (currentIndex >= quizWords.length) {
+                        currentIndex = 0;
+                    }
+                    // カードを再描画（残りの単語がなければ「復習完了」になります）
+                    renderCard();
+                } else {
+                    // 全問題モード、または不正解の場合は通常通り次のカードへ進む
+                    nextCard();
+                }
+
             } catch (e) {
                 console.error(e);
                 showBanner("ステータスの同期に失敗", "error");
             }
         }
 
+        // 💡 修正版：次のカードへ進む処理
         function nextCard() {
-            if (wordsData.length <= 1) {
+            // クイズが空、または1件しかない場合は次のカードに進む必要がないため再描画のみ
+            if (quizWords.length <= 1) {
                 renderCard();
                 return;
             }
-            currentIndex = (currentIndex + 1) % wordsData.length;
+            // 通常のループ処理
+            currentIndex = (currentIndex + 1) % quizWords.length;
             renderCard();
         }
-
-        // 音声エンジン
+        // 💡 差し替え：(quizWordsを使うように変更)
         function speakCurrentWord() {
-            if (wordsData.length === 0) return;
-            const current = wordsData[currentIndex];
+            if (quizWords.length === 0) return;
+            const current = quizWords[currentIndex];
             const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
             
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // 前の音声をクリア
+                window.speechSynthesis.cancel();
                 const utr = new SpeechSynthesisUtterance(current.word);
                 utr.lang = langConfig.speechLang || 'en-US';
                 window.speechSynthesis.speak(utr);
@@ -538,9 +572,28 @@
         window.cancelEdit = cancelEdit;
         window.migrateEnglishData = migrateEnglishData;
         window.handleLangChange = handleLangChange;
-
+        window.setQuizMode = setQuizMode; 
     </script>
-    
+    // 💡 追加：クイズモードの切り替え関数
+        function setQuizMode(mode) {
+            currentMode = mode;
+            
+            // ボタンの色（アクティブ状態）を切り替え
+            document.getElementById('btn-mode-all').className = mode === 'all' ? 'btn btn-primary' : 'btn btn-secondary';
+            document.getElementById('btn-mode-review').className = mode === 'review' ? 'btn btn-primary' : 'btn btn-secondary';
+
+            // 出題するデータを絞り込み
+            if (mode === 'review') {
+                // 不正解 または 未学習 のみ抽出
+                quizWords = wordsData.filter(w => w.status === 'wrong' || !w.status || w.status === 'unlearned');
+            } else {
+                quizWords = [...wordsData]; // 全問題をコピー
+            }
+
+        setQuizMode(currentMode); 
+        renderWordList();
+        updateChart();
+        }
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

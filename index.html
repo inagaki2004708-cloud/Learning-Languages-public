@@ -183,7 +183,9 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+         import { getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut, 
+
+onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, query, orderBy, onSnapshot, addDoc, doc, updateDoc, deleteDoc, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         
         // 💡 多言語設定ファイルのインポート
@@ -214,7 +216,16 @@
         // 💡 多言語管理用変数
         let currentLang = 'en';
         let unsubscribeFirebase = null;
-
+        getRedirectResult(auth)
+    .then((result) => {
+        if (result?.user) {
+            showBanner("ログインしました", "success");
+        }
+    })
+    .catch((error) => {
+        console.error("リダイレクトエラー: ", error);
+        showBanner("ログインに失敗しました", "error");
+    });
         // 【認証状態の監視】
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -235,16 +246,16 @@
             }
         });
 
-        // 【Googleログイン・ログアウト】
-        async function loginWithGoogle() {
-            try {
-                await signInWithPopup(auth, provider);
-                showBanner("ログインしました", "success");
-            } catch (e) {
-                console.error(e);
-                showBanner("ログインに失敗しました", "error");
-            }
-        }
+         // 【Googleログイン・ログアウト】
+async function loginWithGoogle() {
+    try {
+        // ポップアップではなく、画面遷移でログインさせる
+        await signInWithRedirect(auth, provider);
+    } catch (e) {
+        console.error(e);
+        showBanner("ログインに失敗しました", "error");
+    }
+}
         async function logout() {
             try {
                 await signOut(auth);

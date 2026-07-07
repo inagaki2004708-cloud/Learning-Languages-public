@@ -52,9 +52,12 @@
         <h1>🔥 英語学習帳 PRO</h1>
         <p style="font-size: 1.2rem; margin: 30px 0;">連続学習: <strong style="color: #ff4757; font-size: 1.8rem;" id="streak-count">0</strong> 日目</p>
         <div id="start-controls">
-            <button class="btn-primary" style="padding: 15px 40px; font-size: 1.2rem; width: 100%;" onclick="startApp()">学習を始める</button>
-        </div>
-    </div>
+            <p id="user-info" style="margin-bottom: 15px; color: #555; font-weight: bold;">通信中...</p>
+            <button id="login-btn" class="btn-primary" style="padding: 15px 40px; font-size: 1.2rem; width: 100%; margin-bottom: 10px; display: none;" onclick="loginWithGoogle()">Googleでログイン</button>
+            <button id="start-btn" class="btn-success" style="padding: 15px 40px; font-size: 1.2rem; width: 100%; margin-bottom: 10px; display: none;" onclick="startApp()">学習を始める</button>
+            <button id="logout-btn" class="btn-secondary" style="padding: 10px; width: 100%; display: none;" onclick="logout()">ログアウト</button>
+        </div>    
+   </div>
 
     <div id="view-dashboard" class="view-section">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -113,9 +116,11 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy } 
         from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } 
+        from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
         // ==========================================
         // ⚠️ ここにご自身のFirebaseの設定を貼り付けてください
@@ -132,6 +137,9 @@
         // Firebase初期化
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+        let currentUser = null;
 
         // 変数管理
         let words = []; 
@@ -159,12 +167,58 @@
                 return charsToReplace[tag] || tag;
             });
         }
+        // 【認証状態の監視】
+        onAuthStateChanged(auth, (user) => {
+            const userInfo = document.getElementById('user-info');
+            const loginBtn = document.getElementById('login-btn');
+            const startBtn = document.getElementById('start-btn');
+            const logoutBtn = document.getElementById('logout-btn');
 
+            if (user) {
+                // ログインしている時
+                currentUser = user;
+                userInfo.innerText = `👤 ${user.displayName} さん`;
+                loginBtn.style.display = 'none';
+                startBtn.style.display = 'block';
+                logoutBtn.style.display = 'block';
+            } else {
+                // ログアウトしている時
+                currentUser = null;
+                userInfo.innerText = "未ログイン";
+                loginBtn.style.display = 'block';
+                startBtn.style.display = 'none';
+                logoutBtn.style.display = 'none';
+            }
+        });
+
+        // 【ログイン処理】
+        async function loginWithGoogle() {
+            try {
+                await signInWithPopup(auth, provider);
+                showBanner("ログインしました", "success");
+            } catch (error) {
+                console.error(error);
+                showBanner("ログインに失敗しました", "error");
+            }
+        }
+
+        // 【ログアウト処理】
+        async function logout() {
+            try {
+                await signOut(auth);
+                showBanner("ログアウトしました", "success");
+                showView('title'); // トップ画面に戻る
+                words = []; // データをクリア
+                isFirebaseInitialized = false;
+            } catch (error) {
+                console.error(error);
+            }
+        }
         // 【Firebaseリアルタイム同期】
         function initFirebaseSync() {
             if (isFirebaseInitialized) return;
             
-            const wordsCollection = collection(db, 'words');
+            const wordsCollection = collection(db, 'users', currentUser.uid, 'words');
             // 作成日時順で並び替えるクエリ（任意）
             const q = query(wordsCollection, orderBy('createdAt', 'desc'));
 
@@ -287,7 +341,7 @@
             
             try {
                 // Firebaseを更新
-                const wordRef = doc(db, 'words', currentWord.id);
+                 const wordRef = doc(db, 'users', currentUser.uid, 'words', currentWord.id);
                 await updateDoc(wordRef, { status: status });
 
                 if (status === 'learned') showBanner("「覚えた！」に移動しました", "success");
@@ -378,7 +432,7 @@
             if (!jaText || !enText) { showBanner("両方入力してください。", "error"); return; }
             
             try {
-                await addDoc(collection(db, 'words'), {
+                await addDoc(collection(db, 'users', currentUser.uid, 'words'), {
                     ja: jaText,
                     en: enText,
                     status: 'review',
@@ -438,7 +492,7 @@
 
             if (newJa.trim() !== "" && newEn.trim() !== "") {
                 try {
-                    const wordRef = doc(db, 'words', id);
+                    const wordRef = doc(db, 'users', currentUser.uid, 'words', id);
                     await updateDoc(wordRef, {
                         ja: newJa.trim(),
                         en: newEn.trim()
@@ -457,7 +511,7 @@
         async function deleteWord(id) {
             if (confirm("本当にこの項目を削除しますか？")) {
                 try {
-                    const wordRef = doc(db, 'words', id);
+                    const wordRef = doc(db, 'users', currentUser.uid, 'words', id);
                     await deleteDoc(wordRef);
                     showBanner("削除しました！", "success");
                 } catch(e) {
@@ -478,7 +532,8 @@
         window.handleAddWord = handleAddWord;
         window.editWord = editWord;
         window.deleteWord = deleteWord;
-
+        window.loginWithGoogle = loginWithGoogle;
+        window.logout = logout;
         window.addEventListener('DOMContentLoaded', () => {
             checkStreak();
         });

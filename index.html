@@ -188,9 +188,7 @@
         }
 
         
-                showBanner("認証に失敗しました", "error");
-            });
-
+                
         // リアルタイム認証ステータス監視 (ログインの有無で画面を強制自動切り替え)
         onAuthStateChanged(auth, async (user) => {
             if (user) {

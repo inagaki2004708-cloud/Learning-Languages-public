@@ -186,15 +186,7 @@
             langSelect.value = currentLang;
         }
 
-        // スマホ用：画面がリダイレクトから戻ってきた時のログイン成功結果をキャッチ
-        getRedirectResult(auth)
-            .then((result) => {
-                if (result?.user) {
-                    showBanner("ログインに成功しました", "success");
-                }
-            })
-            .catch((error) => {
-                console.error("Redirect Auth Error:", error);
+        
                 showBanner("認証に失敗しました", "error");
             });
 

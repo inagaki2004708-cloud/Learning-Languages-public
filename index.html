@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>英語学習帳 PRO</title>
+    <title>英語学習帳 PRO (Firebase版)</title>
     
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.png">
@@ -11,106 +11,31 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px 15px;
-            margin: 0;
-            user-select: none; 
-            -webkit-user-select: none;
-        }
+        /* ※スタイルシートは元のまま変更していません */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px 15px; margin: 0; user-select: none; -webkit-user-select: none; }
         h1 { color: #333; font-size: 1.5rem; text-align: center; }
-        
-        /* 画面切替用 */
         .view-section { display: none; width: 100%; max-width: 400px; }
         #view-title { display: block; }
-
-        /* フラッシュカード */
-        .card-container {
-            background-color: white;
-            width: 100%;
-            max-width: 400px;
-            height: 220px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            margin-bottom: 20px;
-            cursor: pointer;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
+        .card-container { background-color: white; width: 100%; max-width: 400px; height: 220px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; margin-bottom: 20px; cursor: pointer; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         .card-container:active { transform: scale(0.96); }
         .label { font-size: 0.9rem; color: #888; margin-bottom: 10px; }
         .text { font-size: 1.8rem; font-weight: bold; color: #222; text-align: center; width: 100%; word-wrap: break-word; }
         .english-text { color: #007bff; }
-        
-        /* ボタン類 */
         .btn-group { display: flex; gap: 8px; margin-bottom: 25px; width: 100%; max-width: 400px; }
-        button {
-            flex: 1;
-            padding: 14px 10px;
-            font-size: 1rem;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            touch-action: manipulation; 
-            transition: opacity 0.2s;
-        }
+        button { flex: 1; padding: 14px 10px; font-size: 1rem; border: none; border-radius: 8px; font-weight: bold; touch-action: manipulation; transition: opacity 0.2s; }
         button:active { opacity: 0.8; }
         .btn-primary { background-color: #007bff; color: white; cursor: pointer; }
         .btn-secondary { background-color: #6c757d; color: white; cursor: pointer; }
         .btn-success { background-color: #28a745; color: white; cursor: pointer; }
         .btn-warning { background-color: #ffc107; color: #333; cursor: pointer; }
         .btn-delete { background-color: #dc3545; color: white; cursor: pointer; }
-
-        /* フォーム */
-        .form-container {
-            background-color: white;
-            width: 100%;
-            max-width: 400px;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            box-sizing: border-box;
-            margin-bottom: 20px;
-        }
+        .form-container { background-color: white; width: 100%; max-width: 400px; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); box-sizing: border-box; margin-bottom: 20px; }
         .form-group { display: flex; flex-direction: column; margin-bottom: 15px; }
         .form-group label { margin-bottom: 5px; font-weight: bold; color: #555; }
         .form-group input { padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
-
-        /* リスト */
-        .list-container {
-            background-color: white;
-            width: 100%;
-            max-width: 400px;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            box-sizing: border-box;
-            margin-bottom: 40px;
-        }
-        .list-container h2 {
-            font-size: 1.2rem;
-            margin-top: 0;
-            color: #333;
-            text-align: center;
-            border-bottom: 2px solid #f0f2f5;
-            padding-bottom: 10px;
-        }
-        .list-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 0;
-            border-bottom: 1px solid #eee;
-        }
+        .list-container { background-color: white; width: 100%; max-width: 400px; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); box-sizing: border-box; margin-bottom: 40px; }
+        .list-container h2 { font-size: 1.2rem; margin-top: 0; color: #333; text-align: center; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee; }
         .list-item:last-child { border-bottom: none; }
         .item-text { display: flex; flex-direction: column; gap: 4px; word-break: break-all; margin-right: 10px; }
         .item-ja { font-size: 0.9rem; color: #666; }
@@ -126,7 +51,6 @@
     <div id="view-title" class="view-section" style="text-align: center; margin-top: 50px;">
         <h1>🔥 英語学習帳 PRO</h1>
         <p style="font-size: 1.2rem; margin: 30px 0;">連続学習: <strong style="color: #ff4757; font-size: 1.8rem;" id="streak-count">0</strong> 日目</p>
-        
         <div id="start-controls">
             <button class="btn-primary" style="padding: 15px 40px; font-size: 1.2rem; width: 100%;" onclick="startApp()">学習を始める</button>
         </div>
@@ -147,8 +71,8 @@
 
     <div id="view-study" class="view-section">
         <button onclick="showView('dashboard')" style="margin-bottom: 15px; background:none; border:none; color:#007bff; cursor:pointer; font-size: 1rem; padding: 0;">← ダッシュボードに戻る</button>
-        
         <h1 id="study-title">英語学習帳</h1>
+        
         <div class="card-container" id="card" onclick="toggleAnswer()">
             <div class="label" id="card-label">日本語</div>
             <div class="text" id="card-text">読み込み中...</div>
@@ -184,22 +108,30 @@
 
         <div class="list-container" id="list-container">
             <h2>登録済み学習項目一覧</h2>
-            <div id="word-list"></div>
+            <div id="word-list">読み込み中...</div>
         </div>
     </div>
 
-    <script>
-        // 【追加】Service Workerの登録（PWA・オフライン対応）
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker 登録成功:', reg.scope))
-                    .catch(err => console.log('Service Worker 登録失敗:', err));
-            });
-        }
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy } 
+        from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-        // ローカルストレージ用の保存キー
-        const STORAGE_KEY = 'learn_languages_words';
+        // ==========================================
+        // ⚠️ ここにご自身のFirebaseの設定を貼り付けてください
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCWdPfVhmQ0MgYGQNnfkvAzNiC9dX7ZXtg",
+            authDomain: "learning-languages-public.firebaseapp.com",
+            projectId: "learning-languages-public",
+            storageBucket: "learning-languages-public.firebasestorage.app",
+            messagingSenderId: "250498492118",
+            appId: "1:250498492118:web:e3d0e3d09a357816778b77"
+        };
+
+        // Firebase初期化
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
         // 変数管理
         let words = []; 
@@ -208,56 +140,60 @@
         let isShowingAnswer = false;
         let currentMode = 'manage'; 
         let chartInstance = null;
+        let isFirebaseInitialized = false;
 
         // 【バナー通知機能】
         function showBanner(message, type = 'success') {
             const banner = document.getElementById('notification-banner');
             banner.innerText = message;
             banner.style.display = 'block';
-            
             if (type === 'success') banner.style.backgroundColor = '#28a745';
             else if (type === 'error') banner.style.backgroundColor = '#dc3545';
             else if (type === 'info') banner.style.backgroundColor = '#007bff';
-
             setTimeout(() => { banner.style.display = 'none'; }, 3000);
         }
 
-        // 【追加】XSS対策用エスケープ関数
         function escapeHTML(str) {
             return str.replace(/[&<>'"]/g, function(tag) {
-                const charsToReplace = {
-                    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-                };
+                const charsToReplace = { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' };
                 return charsToReplace[tag] || tag;
             });
         }
 
-        // 【ローカルデータの読み込み】
-        function loadWords() {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                words = JSON.parse(saved);
-            } else {
-                words = [
-                    { id: '1', ja: 'りんご', en: 'apple', status: 'learned' },
-                    { id: '2', ja: '挑戦する', en: 'challenge', status: 'review' },
-                    { id: '3', ja: '環境', en: 'environment', status: 'review' }
-                ];
-                saveWords();
-            }
-            updateCard();
-            renderList();
-        }
+        // 【Firebaseリアルタイム同期】
+        function initFirebaseSync() {
+            if (isFirebaseInitialized) return;
+            
+            const wordsCollection = collection(db, 'words');
+            // 作成日時順で並び替えるクエリ（任意）
+            const q = query(wordsCollection, orderBy('createdAt', 'desc'));
 
-        // 【ローカルデータの保存】
-        function saveWords() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(words));
+            onSnapshot(q, (snapshot) => {
+                words = [];
+                snapshot.forEach((doc) => {
+                    words.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // 画面が管理モードの場合のみ即時反映
+                if (currentMode === 'manage') {
+                    renderList();
+                    updateCard();
+                    if (document.getElementById('view-dashboard').style.display === 'block') {
+                        updateChart();
+                    }
+                }
+            }, (error) => {
+                console.error("Firestore同期エラー: ", error);
+                showBanner("データの読み込みに失敗しました", "error");
+            });
+
+            isFirebaseInitialized = true;
         }
 
         // 【アプリ開始】
         function startApp() {
             checkStreak();
-            loadWords();
+            initFirebaseSync();
             showView('dashboard');
         }
 
@@ -268,9 +204,7 @@
             });
             document.getElementById('view-' + viewId).style.display = 'block';
             
-            if (viewId === 'dashboard') {
-                updateChart();
-            }
+            if (viewId === 'dashboard') updateChart();
             if (viewId === 'study' && currentMode === 'manage') {
                 document.getElementById('study-title').innerText = "学習項目の追加・一覧管理";
                 document.getElementById('register-form').style.display = 'block';
@@ -281,12 +215,11 @@
             }
         }
 
-        // 【ストリーク（連続学習日数）計算】
+        // 【ストリーク（連続学習日数）計算】※これのみローカル保持
         function checkStreak() {
             const today = new Date().toLocaleDateString();
             const lastDate = localStorage.getItem('lastStudyDate');
             let streak = parseInt(localStorage.getItem('studyStreak') || '0');
-
             if (lastDate !== today) {
                 const yesterday = new Date();
                 yesterday.setDate(yesterday.getDate() - 1);
@@ -308,27 +241,15 @@
             const total = words.length;
             const learned = words.filter(w => w.status === 'learned').length;
             const review = total - learned;
-
             const ctx = document.getElementById('statusChart').getContext('2d');
             if (chartInstance) chartInstance.destroy();
-
             chartInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: [`✅ 覚えた (${learned})`, `⚠️ 要復習 (${review})`],
-                    datasets: [{
-                        data: [learned, review],
-                        backgroundColor: ['#28a745', '#ffc107'],
-                        borderWidth: 2
-                    }]
+                    datasets: [{ data: [learned, review], backgroundColor: ['#28a745', '#ffc107'], borderWidth: 2 }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom' }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
             });
         }
 
@@ -337,7 +258,6 @@
             currentMode = mode;
             isShowingAnswer = false;
             currentIndex = 0;
-
             if (mode === 'review') {
                 quizWords = words.filter(w => w.status !== 'learned');
                 document.getElementById('study-title').innerText = "⚠️ 復習クイズ";
@@ -345,59 +265,59 @@
                 quizWords = [...words];
                 document.getElementById('study-title').innerText = "📚 全項目クイズ";
             }
-
             if (quizWords.length === 0) {
                 showBanner("学習する項目がありません！", "error");
+                currentMode = 'manage';
                 return;
             }
-
             document.getElementById('register-form').style.display = 'none';
             document.getElementById('list-container').style.display = 'none';
             document.getElementById('normal-controls').style.display = 'none';
             document.getElementById('quiz-controls').style.display = 'block';
-
             showView('study');
             updateCard();
         }
 
-        // 【仕分けステータス保存】
-        function setWordStatus(status) {
+        // 【Firestore: 仕分けステータス保存】
+        async function setWordStatus(status) {
             const currentList = currentMode === 'manage' ? words : quizWords;
             if (currentList.length === 0) return;
-
+            
             const currentWord = currentList[currentIndex];
             
-            const targetIndex = words.findIndex(w => w.id === currentWord.id);
-            if (targetIndex !== -1) {
-                words[targetIndex].status = status;
-                saveWords();
-            }
+            try {
+                // Firebaseを更新
+                const wordRef = doc(db, 'words', currentWord.id);
+                await updateDoc(wordRef, { status: status });
 
-            if (status === 'learned') showBanner("「覚えた！」に移動しました", "success");
-            else showBanner("「要復習」に移動しました", "info");
-            
-            isShowingAnswer = false;
-            currentIndex++;
-            if (currentIndex >= currentList.length) {
-                showBanner("完了！ダッシュボードに戻ります。", "success");
-                currentMode = 'manage';
-                setTimeout(() => showView('dashboard'), 1500);
-            } else {
-                updateCard();
+                if (status === 'learned') showBanner("「覚えた！」に移動しました", "success");
+                else showBanner("「要復習」に移動しました", "info");
+                
+                isShowingAnswer = false;
+                currentIndex++;
+                
+                if (currentIndex >= currentList.length) {
+                    showBanner("完了！ダッシュボードに戻ります。", "success");
+                    currentMode = 'manage';
+                    setTimeout(() => showView('dashboard'), 1500);
+                } else {
+                    updateCard();
+                }
+            } catch (e) {
+                console.error(e);
+                showBanner("ステータスの更新に失敗しました", "error");
             }
         }
 
         // 【カード表示更新】
         function updateCard() {
             const currentList = currentMode === 'manage' ? words : quizWords;
-
             if (currentList.length === 0) {
                 document.getElementById('card-text').innerText = "学習項目がありません";
                 document.getElementById('card-label').innerText = "-";
                 return;
             }
             if (currentIndex >= currentList.length) currentIndex = 0;
-
             const currentWord = currentList[currentIndex];
             const textElement = document.getElementById('card-text');
             const labelElement = document.getElementById('card-label');
@@ -405,7 +325,6 @@
 
             if (!isShowingAnswer) {
                 labelElement.innerText = "日本語";
-                // XSS対策不要（innerTextを使用しているため安全ですが、統一感のためそのまま表示）
                 textElement.innerText = currentWord.ja;
                 textElement.classList.remove('english-text');
                 if (actionBtn) actionBtn.innerText = "答え";
@@ -447,54 +366,51 @@
             speak(currentList[currentIndex].en);
         }
 
-        // 【修正】フォームからの送信処理を受け取るラッパー関数
         function handleAddWord(event) {
-            event.preventDefault(); // ページのリロードを防ぐ
+            event.preventDefault();
             addWord();
         }
 
-        // 【Create: 学習項目を追加する】
-        function addWord() {
+        // 【Firestore Create: 学習項目を追加する】
+        async function addWord() {
             const jaText = document.getElementById('input-ja').value.trim();
             const enText = document.getElementById('input-en').value.trim();
             if (!jaText || !enText) { showBanner("両方入力してください。", "error"); return; }
             
-            const newWord = {
-                id: Date.now().toString(),
-                ja: jaText,
-                en: enText,
-                status: 'review'
-            };
-
-            words.push(newWord);
-            saveWords();
-
-            document.getElementById('input-ja').value = '';
-            document.getElementById('input-en').value = '';
-            
-            // 登録後、最初の入力欄にフォーカスを戻して連続入力をスムーズに
-            document.getElementById('input-ja').focus();
-            
-            showBanner("学習項目を追加しました！", "success");
-
-            updateCard();
-            renderList();
+            try {
+                await addDoc(collection(db, 'words'), {
+                    ja: jaText,
+                    en: enText,
+                    status: 'review',
+                    createdAt: serverTimestamp() // 並び替え用に作成日時を記録
+                });
+                
+                document.getElementById('input-ja').value = '';
+                document.getElementById('input-en').value = '';
+                document.getElementById('input-ja').focus();
+                showBanner("学習項目を追加しました！", "success");
+            } catch (e) {
+                console.error(e);
+                showBanner("追加に失敗しました", "error");
+            }
         }
 
         // 【Read: 一覧を表示する】
         function renderList() {
             const listDiv = document.getElementById('word-list');
             listDiv.innerHTML = '';
+            
+            if (words.length === 0) {
+                listDiv.innerHTML = '<p style="text-align:center; color:#666;">まだ単語が登録されていません</p>';
+                return;
+            }
 
             words.forEach((word) => {
                 const statusBadge = word.status === 'learned' 
                     ? '<span style="color:#28a745; font-size:0.8rem;">[覚えた]</span>' 
                     : '<span style="color:#ffc107; font-size:0.8rem;">[要復習]</span>';
-
-                // 【修正】XSS対策としてエスケープ関数を通す
                 const safeJa = escapeHTML(word.ja);
                 const safeEn = escapeHTML(word.en);
-
                 const item = document.createElement('div');
                 item.className = 'list-item';
                 item.innerHTML = `
@@ -511,41 +427,58 @@
             });
         }
 
-        // 【Update: データを修正する】
-        function editWord(id) {
+        // 【Firestore Update: データを修正する】
+        async function editWord(id) {
             const word = words.find(w => w.id === id);
             if (!word) return;
-
             const newJa = prompt("新しい日本語訳を入力してください:", word.ja);
             if (newJa === null) return;
-
             const newEn = prompt("新しい英訳を入力してください:", word.en);
             if (newEn === null) return;
 
             if (newJa.trim() !== "" && newEn.trim() !== "") {
-                word.ja = newJa.trim();
-                word.en = newEn.trim();
-                saveWords();
-                renderList();
-                updateCard();
-                showBanner("修正しました！", "success");
+                try {
+                    const wordRef = doc(db, 'words', id);
+                    await updateDoc(wordRef, {
+                        ja: newJa.trim(),
+                        en: newEn.trim()
+                    });
+                    showBanner("修正しました！", "success");
+                } catch(e) {
+                    console.error(e);
+                    showBanner("修正に失敗しました", "error");
+                }
             } else {
                 showBanner("文字を入力してください。", "error");
             }
         }
 
-        // 【Delete: データを削除する】
-        function deleteWord(id) {
+        // 【Firestore Delete: データを削除する】
+        async function deleteWord(id) {
             if (confirm("本当にこの項目を削除しますか？")) {
-                words = words.filter(w => w.id !== id);
-                saveWords();
-                renderList();
-                updateCard();
-                showBanner("削除しました！", "success");
+                try {
+                    const wordRef = doc(db, 'words', id);
+                    await deleteDoc(wordRef);
+                    showBanner("削除しました！", "success");
+                } catch(e) {
+                    console.error(e);
+                    showBanner("削除に失敗しました", "error");
+                }
             }
         }
 
-        // ページ読み込み完了時の初期化処理
+        // HTML側のイベントから呼べるようにwindowオブジェクトに登録
+        window.startApp = startApp;
+        window.showView = showView;
+        window.startQuiz = startQuiz;
+        window.setWordStatus = setWordStatus;
+        window.toggleAnswer = toggleAnswer;
+        window.nextCard = nextCard;
+        window.speakCurrentWord = speakCurrentWord;
+        window.handleAddWord = handleAddWord;
+        window.editWord = editWord;
+        window.deleteWord = deleteWord;
+
         window.addEventListener('DOMContentLoaded', () => {
             checkStreak();
         });

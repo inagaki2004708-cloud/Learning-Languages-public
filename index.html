@@ -152,15 +152,15 @@
         // ==========================================
         // ⚠️ Firebase設定（ご自身のConfigをここに貼り付けてください）
         // ==========================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyCWdPfVhmQ0MgYGQNnfkvAzNiC9dX7ZXtg",
-            authDomain: "learning-languages-public.firebaseapp.com",
-            projectId: "learning-languages-public",
-            storageBucket: "learning-languages-public.firebasestorage.app",
-            messagingSenderId: "250498492118",
-            appId: "1:250498492118:web:e3d0e3d09a357816778b77"
-        };
-
+         const firebaseConfig = {
+  apiKey: "AIzaSyCWdPfVhmQ0MgYGQNnfkvAzNiC9dX7ZXtg",
+  authDomain: "learning-languages-public.firebaseapp.com",
+  projectId: "learning-languages-public",
+  storageBucket: "learning-languages-public.firebasestorage.app",
+  messagingSenderId: "250498492118",
+  appId: "1:250498492118:web:e3d0e3d09a357816778b77",
+  measurementId: "G-GVKPXZ1QLV"
+};
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);

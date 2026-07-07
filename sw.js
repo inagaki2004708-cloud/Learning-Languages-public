@@ -38,8 +38,17 @@ self.addEventListener('activate', event => {
     );
 });
 
-// ネットワークリクエストをインターセプト
+// 【修正後】ネットワークリクエストをインターセプト
 self.addEventListener('fetch', event => {
+    // 💡 Firebase Auth や Googleの認証関連の通信はキャッシュせずスルーさせる
+    if (
+        event.request.url.includes('__/') || 
+        event.request.url.includes('identitytoolkit') || 
+        event.request.url.includes('googleapis')
+    ) {
+        return; 
+    }
+
     event.respondWith(
         caches.match(event.request)
             .then(response => {

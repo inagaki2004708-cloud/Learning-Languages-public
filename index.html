@@ -129,8 +129,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { 
             getAuth, 
-            signInWithRedirect, 
-            getRedirectResult, 
+            signInWithPopup,
             GoogleAuthProvider, 
             signOut, 
             onAuthStateChanged 
@@ -222,15 +221,22 @@
 
         // ログイン・ログアウト駆動
         async function loginWithGoogle() {
-            try {
-                localStorage.setItem('selected_lang', currentLang);
-                await signInWithRedirect(auth, provider);
-            } catch (e) {
-                console.error(e);
-                showBanner("サインイン画面への移行に失敗しました", "error");
-            }
+    try {
+        // ログイン時の言語をローカルストレージに保存
+        localStorage.setItem('selected_lang', currentLang);
+        
+        // 【修正】ポップアップ方式でサインインを実行
+        const result = await signInWithPopup(auth, provider);
+        
+        // ポップアップが成功し、ユーザー情報が取得できたら成功バナーを表示
+        if (result && result.user) {
+            showBanner("ログインに成功しました", "success");
         }
-
+    } catch (e) {
+        console.error(e);
+        showBanner("サインインに失敗しました", "error");
+    }
+}
         async function logout() {
             try {
                 await signOut(auth);

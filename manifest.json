@@ -1,6 +1,6 @@
 {
-  "name": "英語学習帳 PRO",
-  "short_name": "英語学習帳",
+  "name": "言語学習帳 PRO",
+  "short_name": "言語学習帳",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f0f2f5",

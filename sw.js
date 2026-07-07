@@ -1,14 +1,14 @@
-// sw.js の完全版
-// キャッシュネームのバージョンを v2 に上げることで、スマホに「コードが新しくなった」と通知します
-const CACHE_NAME = 'english-pro-cache-v2'; 
+// sw.js
+// キャッシュネームのバージョンを v3 に上げることで、変更を強制適用します
+const CACHE_NAME = 'english-pro-cache-v3'; 
 const urlsToCache = [
     './',
     './index.html',
+    './languages.js', // 💡 ここを追加！これがないとオフラインや再起動時にエラーになります
     './manifest.json',
     './icon.png',
     'https://cdn.jsdelivr.net/npm/chart.js' 
 ];
-
 // インストール時に新しいキャッシュを保存
 self.addEventListener('install', event => {
     event.waitUntil(
@@ -38,24 +38,3 @@ self.addEventListener('activate', event => {
     );
 });
 
-// 【修正後】ネットワークリクエストをインターセプト
-self.addEventListener('fetch', event => {
-    // 💡 Firebase Auth や Googleの認証関連の通信はキャッシュせずスルーさせる
-    if (
-        event.request.url.includes('__/') || 
-        event.request.url.includes('identitytoolkit') || 
-        event.request.url.includes('googleapis')
-    ) {
-        return; 
-    }
-
-    event.respondWith(
-        caches.match(event.request)
-            .then(response => {
-                if (response) {
-                    return response; // キャッシュがあればそれを返す
-                }
-                return fetch(event.request);
-            })
-    );
-});

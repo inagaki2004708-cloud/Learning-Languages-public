@@ -267,9 +267,7 @@
                 wordsData = [];
                 snap.forEach(doc => wordsData.push({ id: doc.id, ...doc.data() }));
             }
-
-            currentIndex = 0;
-            renderCard();
+            setQuizMode(currentMode);
             renderWordList();
             updateChart();
         }

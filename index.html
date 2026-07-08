@@ -416,17 +416,24 @@
             if (quizWords.length === 0) return;
             const current = quizWords[currentIndex];
             const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
+            
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
-                // 表面に表示されている英語（current.word）を読み上げるよう設定
-                const utr = new SpeechSynthesisUtterance(current.word);
+                
+                // 【確実な方法】表面に表示されているテキストを直接取得する
+                const frontText = document.getElementById('card-front-text').textContent;
+                
+                // 取得した表面のテキストをセット
+                const utr = new SpeechSynthesisUtterance(frontText);
+                
+                // 対象の言語（英語など）の発音エンジンを指定
                 utr.lang = langConfig.speechLang || 'en-US';
+                
                 window.speechSynthesis.speak(utr);
             } else {
                 showBanner("音声読み上げ非対応ブラウザです", "error");
             }
         }
-
         function editCurrentCard() {
             if (quizWords.length === 0) return;
             const current = quizWords[currentIndex];

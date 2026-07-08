@@ -109,10 +109,10 @@
         <div class="card-container" id="word-card" onclick="toggleAnswer()">
             <div class="card-inner">              
                <div class="card-front">
-                    <div class="meaning-text" id="card-front-text" style="color: #333;">読み込み中...</div>
+                    <div class="word-text" id="card-front-text">読み込み中...</div>
                 </div>
                 <div class="card-back">
-                    <div class="word-text" id="card-back-text" style="color: #007bff;">単語</div>
+                    <div class="meaning-text" id="card-back-text">単語</div>
                     <button class="btn btn-secondary" onclick="event.stopPropagation(); speakCurrentWord();" style="padding: 6px 16px; font-size: 0.9rem; border-radius: 20px; margin-top:15px;">🔊 発音を聴く</button>
                 </div>
             </div>
@@ -241,10 +241,8 @@
             langSelect.value = currentLang;
         }
 
-        // ログイン状態変更のハンドリング
         onAuthStateChanged(auth, async (user) => {
-            // 要求に基づき、ログインの有無を問わず main-view を常に維持
-            showView('main-view');
+            showView('main-view'); // 常にメイン画面を表示
 
             if (user) {
                 currentUser = user;
@@ -257,7 +255,6 @@
                 await loadWords();
             } else {
                 currentUser = null;
-                // 未ログイン状態でもログイン画面に強制移動させず、メイン画面で「項目がありません」などを表示
                 wordsData = [];
                 quizWords = [];
                 renderCard();
@@ -367,6 +364,7 @@
             if (currentIndex >= quizWords.length) currentIndex = 0;
             const current = quizWords[currentIndex];
             
+            // 表面に「意味（日本語）」、裏面に「単語（英語）」を設定
             document.getElementById('card-front-text').textContent = current.meaning; 
             document.getElementById('card-back-text').textContent = current.word;
         }
@@ -421,6 +419,7 @@
             const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
+                // 裏面（英語）のデータを読み上げるよう設定
                 const utr = new SpeechSynthesisUtterance(current.word);
                 utr.lang = langConfig.speechLang || 'en-US';
                 window.speechSynthesis.speak(utr);
@@ -515,7 +514,6 @@
             }
         }
 
-        // 戻るボタンを押した場合は元のログイン画面（login-view）へ移行
         function returnToLoginFromMove() {
             closeModals();
             showView('login-view');

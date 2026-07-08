@@ -12,7 +12,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        /* 元の洗練されたデザインシステムをベースに最適化 */
+        /* 洗練されたデザインシステムをベースに最適化 */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px 15px; margin: 0; user-select: none; -webkit-user-select: none; }
         h1 { color: #333; font-size: 1.5rem; text-align: center; margin-bottom: 5px; }
         .view-section { display: none; width: 100%; max-width: 400px; }
@@ -72,7 +72,7 @@
 
     <div id="banner" class="banner"></div>
 
-    <section id="login-view" class="view-section" style="display: block;">
+    <section id="login-view" class="view-section">
         <div class="login-container">
             <h2 style="margin: 0; color: #333;">多言語学習帳 PRO</h2>
             <p style="color: #666; font-size: 0.9rem; margin-top: 8px;">クラウドとデータを同期して学習を開始しましょう</p>
@@ -83,7 +83,7 @@
         </div>
     </section>
 
-    <section id="main-view" class="view-section">
+    <section id="main-view" class="view-section" style="display: block;">
         <div class="nav-header">
             <select id="lang-select" class="lang-select-box" onchange="window.handleLangChange(this.value)"></select>
             <button class="btn btn-secondary" onclick="logout()" style="padding: 6px 12px; font-size: 0.8rem; margin:0;">ログアウト</button>
@@ -199,7 +199,7 @@
         import { LANGUAGES } from "./languages.js";
 
         // ==========================================
-        // ⚠️ Firebase設定（ご自身のConfigをここに貼り付けてください）
+        // Firebase設定
         // ==========================================
         const firebaseConfig = {
           apiKey: "AIzaSyCWdPfVhmQ0MgYGQNnfkvAzNiC9dX7ZXtg",
@@ -241,7 +241,11 @@
             langSelect.value = currentLang;
         }
 
+        // ログイン状態変更のハンドリング
         onAuthStateChanged(auth, async (user) => {
+            // 要求に基づき、ログインの有無を問わず main-view を常に維持
+            showView('main-view');
+
             if (user) {
                 currentUser = user;
                 const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
@@ -249,12 +253,16 @@
                 document.getElementById('view-title').textContent = langConfig.title;
                 document.getElementById('input-word').placeholder = `学習項目を入力 (${langConfig.label})`;
 
-                showView('main-view');
                 await loadCategoryNames();
                 await loadWords();
             } else {
                 currentUser = null;
-                showView('login-view');
+                // 未ログイン状態でもログイン画面に強制移動させず、メイン画面で「項目がありません」などを表示
+                wordsData = [];
+                quizWords = [];
+                renderCard();
+                updateChart();
+                renderFolders();
             }
         });
 
@@ -280,6 +288,7 @@
         }
 
         async function loadCategoryNames() {
+            if (!currentUser) return;
             try {
                 const docRef = doc(db, "categorySettings", currentUser.uid + "_" + currentLang);
                 const snap = await getDoc(docRef);
@@ -295,6 +304,7 @@
         }
 
         async function saveCategoryName() {
+            if (!currentUser) { showBanner("ログインが必要です", "error"); return; }
             const newName = document.getElementById('cat-edit-title').value.trim();
             if(!newName) return;
             customCatNames[activeEditCategory] = newName;
@@ -346,7 +356,7 @@
             const hasData = quizWords.length > 0;
             document.getElementById('card-controls').style.display = hasData ? 'flex' : 'none';
             document.getElementById('current-card-edit-controls').style.display = hasData ? 'flex' : 'none';
-            document.getElementById('move-category-controls').style.display = hasData ? 'flex' : 'none'; // カテゴリ移動ボタンの表示切替
+            document.getElementById('move-category-controls').style.display = hasData ? 'flex' : 'none';
 
             if (!hasData) {
                 document.getElementById('card-front-text').textContent = currentMode === 'review' ? "復習完了🎉" : "項目がありません";
@@ -357,7 +367,6 @@
             if (currentIndex >= quizWords.length) currentIndex = 0;
             const current = quizWords[currentIndex];
             
-            // 表面に意味(日本語)を、裏面に単語(英語)を配置するよう逆に変更
             document.getElementById('card-front-text').textContent = current.meaning; 
             document.getElementById('card-back-text').textContent = current.word;
         }
@@ -369,7 +378,7 @@
         }
 
         async function setWordStatus(status) {
-            if (quizWords.length === 0) return;
+            if (quizWords.length === 0 || !currentUser) return;
             
             const current = quizWords[currentIndex];
             const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
@@ -420,9 +429,6 @@
             }
         }
 
-        // =====================================
-        // アイテム編集・削除関連（メイン画面のカード直接操作）
-        // =====================================
         function editCurrentCard() {
             if (quizWords.length === 0) return;
             const current = quizWords[currentIndex];
@@ -436,7 +442,7 @@
         }
 
         async function saveQuickEdit() {
-            if (quizWords.length === 0) return;
+            if (quizWords.length === 0 || !currentUser) return;
             const current = quizWords[currentIndex];
             const wVal = document.getElementById('quick-edit-word').value.trim();
             const mVal = document.getElementById('quick-edit-meaning').value.trim();
@@ -454,7 +460,7 @@
         }
 
         async function deleteCurrentCard() {
-            if (quizWords.length === 0) return;
+            if (quizWords.length === 0 || !currentUser) return;
             if (!confirm("現在表示しているカードを削除しますか？")) return;
             
             const current = quizWords[currentIndex];
@@ -468,9 +474,6 @@
             }
         }
 
-        // =====================================
-        // 現在のカードのカテゴリを移動する機能
-        // =====================================
         function openMoveCategoryModal() {
             if (quizWords.length === 0) return;
             const container = document.getElementById('modal-move-cat-list');
@@ -480,7 +483,6 @@
 
             catKeys.forEach(key => {
                 const btn = document.createElement('button');
-                // 現在のカテゴリは色を変えるか区別する
                 if (current.category === key) {
                     btn.className = 'btn btn-secondary';
                     btn.textContent = `${getCatName(key)} (現在のカテゴリ)`;
@@ -499,7 +501,7 @@
         }
 
         async function moveCurrentCardCategory(newCategoryKey) {
-            if (quizWords.length === 0) return;
+            if (quizWords.length === 0 || !currentUser) return;
             const current = quizWords[currentIndex];
             const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
             
@@ -507,23 +509,20 @@
                 await updateDoc(doc(db, langConfig.collectionSuffix, current.id), { category: newCategoryKey, updatedAt: new Date() });
                 showBanner("新しいカテゴリに移動しました", "success");
                 closeModals();
-                await loadWords(); // 再読み込みしてリストを更新
+                await loadWords(); 
             } catch (e) {
                 showBanner("カテゴリの移動に失敗しました", "error");
             }
         }
 
-        // 移動メニューから元のログイン画面に戻る
+        // 戻るボタンを押した場合は元のログイン画面（login-view）へ移行
         function returnToLoginFromMove() {
             closeModals();
             showView('login-view');
         }
 
-        // =====================================
-        // カテゴリー内データの追加・編集
-        // =====================================
         async function handleAddWord(isDirectEdit = false) {
-            if (!currentUser) return;
+            if (!currentUser) { showBanner("ログインが必要です", "error"); return; }
             const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
             
             const wInput = document.getElementById('input-word');
@@ -585,6 +584,7 @@
         }
 
         async function deleteWord(id) {
+            if (!currentUser) return;
             if (!confirm("この学習項目データを削除しますか？")) return;
             const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
             try {
@@ -594,9 +594,6 @@
             } catch (e) { showBanner("削除処理に失敗しました", "error"); }
         }
 
-        // =====================================
-        // UI レンダリング関連
-        // =====================================
         function renderFolders() {
             const container = document.getElementById('folder-grid');
             container.innerHTML = '';

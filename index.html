@@ -414,20 +414,42 @@
 
          function speakCurrentWord() {
             if (quizWords.length === 0) return;
+            // 現在の言語設定を取得（例：英語なら 'en-US'、フランス語なら 'fr-FR' など）
+            const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
             
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 
-                // 【修正箇所】裏面に表示されているテキストを直接取得する
+                // 裏面に表示されているテキストを取得
                 const backText = document.getElementById('card-back-text').textContent;
-                
-                // 取得した裏面のテキストをセット
                 const utr = new SpeechSynthesisUtterance(backText);
                 
-                // 裏面が日本語（意味）であることを想定し、日本語の発音エンジンを指定
-                // （※もし裏面を英語などの外国語に戻す場合は、'ja-JP' の部分を langConfig.speechLang || 'en-US' に変更してください）
-                utr.lang = 'ja-JP';
+                // ターゲットとなる言語コード
+                const targetLang = langConfig.speechLang || 'en-US';
+                utr.lang = targetLang;
                 
+                // === ここから追加：ネイティブスピーカーの音声を選択する処理 ===
+                // ブラウザにインストールされているすべての音声リストを取得
+                const voices = window.speechSynthesis.getVoices();
+                
+                if (voices.length > 0) {
+                    // 1. まず、言語コードが完全に一致するネイティブ音声を探す（例: 'en-US'）
+                    let selectedVoice = voices.find(voice => voice.lang === targetLang);
+                    
+                    // 2. 完全一致が見つからない場合、言語グループが一致するものを探す（例: 'en-US'がない場合 'en-GB' など 'en' を探す）
+                    if (!selectedVoice) {
+                        const shortLang = targetLang.split('-')[0];
+                        selectedVoice = voices.find(voice => voice.lang.startsWith(shortLang));
+                    }
+                    
+                    // 3. 適切な音声が見つかれば、それを明示的にセットする
+                    if (selectedVoice) {
+                        utr.voice = selectedVoice;
+                    }
+                }
+                // ==========================================================
+                
+                // 音声を再生
                 window.speechSynthesis.speak(utr);
             } else {
                 showBanner("音声読み上げ非対応ブラウザです", "error");

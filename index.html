@@ -412,13 +412,13 @@
             renderCard();
         }
 
-        function speakCurrentWord() {
+         function speakCurrentWord() {
             if (quizWords.length === 0) return;
             const current = quizWords[currentIndex];
             const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
-                // 裏面（英語）のデータを読み上げるよう設定
+                // 表面に表示されている英語（current.word）を読み上げるよう設定
                 const utr = new SpeechSynthesisUtterance(current.word);
                 utr.lang = langConfig.speechLang || 'en-US';
                 window.speechSynthesis.speak(utr);

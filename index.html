@@ -414,20 +414,19 @@
 
          function speakCurrentWord() {
             if (quizWords.length === 0) return;
-            const current = quizWords[currentIndex];
-            const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
             
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 
-                // 【確実な方法】表面に表示されているテキストを直接取得する
-                const frontText = document.getElementById('card-front-text').textContent;
+                // 【修正箇所】裏面に表示されているテキストを直接取得する
+                const backText = document.getElementById('card-back-text').textContent;
                 
-                // 取得した表面のテキストをセット
-                const utr = new SpeechSynthesisUtterance(frontText);
+                // 取得した裏面のテキストをセット
+                const utr = new SpeechSynthesisUtterance(backText);
                 
-                // 対象の言語（英語など）の発音エンジンを指定
-                utr.lang = langConfig.speechLang || 'en-US';
+                // 裏面が日本語（意味）であることを想定し、日本語の発音エンジンを指定
+                // （※もし裏面を英語などの外国語に戻す場合は、'ja-JP' の部分を langConfig.speechLang || 'en-US' に変更してください）
+                utr.lang = 'ja-JP';
                 
                 window.speechSynthesis.speak(utr);
             } else {

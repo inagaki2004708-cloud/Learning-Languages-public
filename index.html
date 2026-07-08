@@ -139,8 +139,7 @@
 
     <div id="modal-cat-move" class="modal-overlay">
         <div class="modal-content" style="min-height: auto; border-radius: 15px;">
-            <button class="btn btn-secondary" style="position: absolute; top: 15px; right: 15px; padding: 6px 14px; margin: 0; font-size: 0.85rem; border-radius: 8px;" onclick="returnToLoginFromMove()">戻る</button>
-            
+             <button class="btn btn-secondary" style="position: absolute; top: 15px; right: 15px; padding: 6px 14px; margin: 0; font-size: 0.85rem; border-radius: 8px;" onclick="closeModals()">戻る</button>            
             <h2 style="margin-top: 30px; color: #333; text-align: center; font-size: 1.2rem;">移動先のカテゴリを選択</h2>
             <p style="text-align: center; font-size: 0.85rem; color: #666;">※選択すると現在のカテゴリから移動します</p>
             <div id="modal-move-cat-list" style="margin-top: 15px; max-height: 300px; overflow-y: auto;"></div>
@@ -365,8 +364,8 @@
             const current = quizWords[currentIndex];
             
             // 表面に「意味（日本語）」、裏面に「単語（英語）」を設定
-            document.getElementById('card-front-text').textContent = current.meaning; 
-            document.getElementById('card-back-text').textContent = current.word;
+            document.getElementById('card-front-text').textContent = current.word; 
+    document.getElementById('card-back-text').textContent = current.meaning;   
         }
 
         function toggleAnswer() {
@@ -514,10 +513,6 @@
             }
         }
 
-        function returnToLoginFromMove() {
-            closeModals();
-            showView('login-view');
-        }
 
         async function handleAddWord(isDirectEdit = false) {
             if (!currentUser) { showBanner("ログインが必要です", "error"); return; }
@@ -728,8 +723,7 @@
         window.saveQuickEdit = saveQuickEdit;
         window.openMoveCategoryModal = openMoveCategoryModal;
         window.moveCurrentCardCategory = moveCurrentCardCategory;
-        window.returnToLoginFromMove = returnToLoginFromMove;
-
+        
         function setQuizMode(mode, categoryKey = null) {
             currentMode = mode;
             

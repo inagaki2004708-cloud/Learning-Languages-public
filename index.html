@@ -358,13 +358,16 @@ async function resetCurrentCategory() {
                 showBanner("初期化に失敗しました", "error");
             }
         }
+        // ==========================================
+        // 2. AI自動生成時の重複チェック＆除外修正
+        // ==========================================
         async function handleAiFileSelected(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             let apiKey = document.getElementById('gemini-api-key').value.trim();
             if (!apiKey) {
-                apiKey = localStorage.getItem('gemini_api_key') || '';
+                apiKey = localStorage.getItem('gemini_api_key'] || '';
             }
             if (!apiKey) {
                 showBanner("Gemini APIキーを入力してください", "error");
@@ -382,22 +385,46 @@ async function resetCurrentCategory() {
                     throw new Error("単語を検出できませんでした。");
                 }
 
-                const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
+                // ▼ 【追加】AIが抽出した配列内での重複を排除（最初に出現したものを優先）
+                const uniqueExtracted = [];
+                const seenInAi = new Set();
                 for (const item of extractedWords) {
-                    await addDoc(collection(db, langConfig.collectionSuffix), {
-                        uid: currentUser.uid,
-                        word: item.word,
-                        meaning: item.meaning,
-                        status: 'unlearned',
-                        reviewCount: 0,
-                        correctCount: 0,
-                        category: activeEditCategory,
-                        createdAt: new Date(),
-                        updatedAt: new Date()
-                    });
+                    const normalized = item.word.trim().toLowerCase();
+                    if (!seenInAi.has(normalized)) {
+                        seenInAi.add(normalized);
+                        uniqueExtracted.push(item);
+                    }
                 }
 
-                showBanner(`${extractedWords.length}件の単語を自動登録しました！`, "success");
+                // ▼ 【追加】すでに現在のカテゴリーに登録されている単語のセットを作成
+                const currentCatWords = wordsData.filter(w => w.category === activeEditCategory);
+                const existingWordSet = new Set(currentCatWords.map(w => w.word.trim().toLowerCase()));
+
+                const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
+                let addedCount = 0;
+
+                for (const item of uniqueExtracted) {
+                    const normalized = item.word.trim().toLowerCase();
+                    
+                    // 既存の単語と被っていなければFirestoreに登録
+                    if (!existingWordSet.has(normalized)) {
+                        await addDoc(collection(db, langConfig.collectionSuffix), {
+                            uid: currentUser.uid,
+                            word: item.word.trim(),
+                            meaning: item.meaning.trim(),
+                            status: 'unlearned',
+                            reviewCount: 0,
+                            correctCount: 0,
+                            category: activeEditCategory,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        });
+                        existingWordSet.add(normalized); // 同一ファイル内での重複も防ぐ
+                        addedCount++;
+                    }
+                }
+
+                showBanner(`${addedCount}件の単語を自動登録しました（重複分は除外）`, "success");
                 await loadWords();
             } catch (e) {
                 console.error(e);
@@ -693,6 +720,9 @@ window.speakCard = speakCard;
         }
 
 
+        // ==========================================
+        // 1. 手動追加・編集時の重複チェック修正
+        // ==========================================
         async function handleAddWord(isDirectEdit = false) {
             if (!currentUser) { showBanner("ログインが必要です", "error"); return; }
             const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
@@ -707,9 +737,22 @@ window.speakCard = speakCard;
                 return;
             }
 
+            // ▼ 【追加】同じカテゴリー内にすでに同じ単語が存在するかチェック（編集時は自分自身を除外）
+            const editId = document.getElementById('edit-id').value;
+            const isDuplicate = wordsData.some(w => 
+                w.category === activeEditCategory && 
+                w.word.trim().toLowerCase() === wVal.toLowerCase() && 
+                w.id !== editId
+            );
+
+            if (isDuplicate) {
+                showBanner("この単語はすでにこのカテゴリーに存在します", "error");
+                return;
+            }
+
             try {
                 if (isEditMode) {
-                    const id = document.getElementById('edit-id').value;
+                    const id = editId;
                     await updateDoc(doc(db, langConfig.collectionSuffix, id), {
                         word: wVal, meaning: mVal, updatedAt: new Date()
                     });

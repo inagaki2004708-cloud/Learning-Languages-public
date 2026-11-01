@@ -161,9 +161,11 @@
         <div class="modal-content">
             <button class="close-btn" onclick="closeModals()">×</button>
             
+            <!-- ▼ ここを修正：入力欄、保存ボタンの並びにリセットボタンを追加 -->
             <div style="display: flex; gap: 5px; align-items: center; margin-bottom: 15px; margin-right: 35px;">
                 <input type="text" id="cat-edit-title" style="flex: 1; padding: 10px; font-size: 1.1rem; font-weight: bold; border: 1px solid #ccc; border-radius: 8px;" placeholder="カテゴリー名">
-                <button class="btn btn-success" style="margin:0; padding: 10px 15px;" onclick="saveCategoryName()">保存</button>
+                <button class="btn btn-success" style="margin:0; padding: 10px 12px;" onclick="saveCategoryName()">保存</button>
+                <button class="btn btn-danger" style="margin:0; padding: 10px 12px;" onclick="resetCurrentCategory()">リセット</button>
             </div>
 
             <div class="form-group" style="margin-top: 0;">
@@ -312,7 +314,43 @@
                 showBanner("カテゴリー名を変更しました", "success");
             } catch(e) { showBanner("保存に失敗しました", "error"); }
         }
+async function resetCurrentCategory() {
+            if (!currentUser) { showBanner("ログインが必要です", "error"); return; }
+            
+            const catName = getCatName(activeEditCategory);
+            // 1. 初期化前の確認ダイアログを表示
+            if (!confirm(`「${catName}」のカテゴリー名と、登録されているすべての学習項目を初期化（削除）しますか？この操作は元に戻せません。`)) {
+                return;
+            }
 
+            const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
+            
+            try {
+                // 2. 該当カテゴリに属するFirebase上の単語データをすべて削除
+                const targetWords = wordsData.filter(w => w.category === activeEditCategory);
+                for (const item of targetWords) {
+                    await deleteDoc(doc(db, langConfig.collectionSuffix, item.id));
+                }
+
+                // 3. カスタムカテゴリ名があれば設定から削除（デフォルト名に戻す）
+                if (customCatNames[activeEditCategory]) {
+                    delete customCatNames[activeEditCategory];
+                    await setDoc(doc(db, "categorySettings", currentUser.uid + "_" + currentLang), { names: customCatNames }, { merge: true });
+                }
+
+                showBanner("カテゴリーを初期化しました", "success");
+                
+                // 4. 入力欄や画面表示を更新
+                document.getElementById('cat-edit-title').value = getCatName(activeEditCategory);
+                cancelEditMode();
+                await loadWords();
+                renderFolders();
+                renderWordList();
+            } catch (e) {
+                console.error(e);
+                showBanner("初期化に失敗しました", "error");
+            }
+        }
         async function loadWords() {
             if (!currentUser) return;
             const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
@@ -751,6 +789,7 @@ window.speakCard = speakCard;
         window.openCategoryQuizSelect = openCategoryQuizSelect;
         window.closeModals = closeModals;
         window.saveCategoryName = saveCategoryName;
+        window.resetCurrentCategory = resetCurrentCategory;
         window.editCurrentCard = editCurrentCard;
         window.deleteCurrentCard = deleteCurrentCard;
         window.closeQuickEdit = closeQuickEdit;

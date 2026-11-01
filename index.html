@@ -178,7 +178,14 @@
                     <button id="btn-cancel-edit" class="btn btn-secondary" style="flex:1; margin:0; display:none;" onclick="cancelEditMode()">取消</button>
                 </div>
             </div>
-
+            <div class="form-group" style="margin-top: 15px; background: #eef2f7; border: 2px dashed #007bff;">
+                <h3 style="margin: 0 0 5px 0; font-size: 1.1rem; color:#007bff;">🤖 画像・PDFから自動生成</h3>
+                <p style="font-size: 0.8rem; color: #555; margin-bottom: 10px;">教科書や資料の画像・PDFを選ぶと、AIが単語と主な意味（2〜3つ）を自動抽出します。</p>
+                <input type="password" id="gemini-api-key" placeholder="Gemini APIキーを入力 (初回のみ)" style="margin-bottom: 8px; font-size: 0.9rem;">
+                <input type="file" id="ai-file-input" accept="image/*, application/pdf" style="display: none;" onchange="handleAiFileSelected(event)">
+                <button class="btn btn-primary" style="width: 100%; margin: 0;" onclick="document.getElementById('ai-file-input').click()">📁 ファイルを選択して自動作成</button>
+                <div id="ai-loading" style="display: none; text-align: center; margin-top: 10px; font-weight: bold; color: #007bff;">解析中... ⏳ しばらくお待ちください</div>
+            </div>
             <div class="word-list" id="modal-word-list-container"></div>
         </div>
     </div>
@@ -350,6 +357,106 @@ async function resetCurrentCategory() {
                 console.error(e);
                 showBanner("初期化に失敗しました", "error");
             }
+        }
+        async function handleAiFileSelected(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            let apiKey = document.getElementById('gemini-api-key').value.trim();
+            if (!apiKey) {
+                apiKey = localStorage.getItem('gemini_api_key') || '';
+            }
+            if (!apiKey) {
+                showBanner("Gemini APIキーを入力してください", "error");
+                return;
+            }
+            localStorage.setItem('gemini_api_key', apiKey);
+
+            document.getElementById('ai-loading').style.display = 'block';
+
+            try {
+                const base64Data = await fileToBase64(file);
+                const extractedWords = await callGeminiVisionAPI(apiKey, base64Data, file.type);
+
+                if (!extractedWords || extractedWords.length === 0) {
+                    throw new Error("単語を検出できませんでした。");
+                }
+
+                const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
+                for (const item of extractedWords) {
+                    await addDoc(collection(db, langConfig.collectionSuffix), {
+                        uid: currentUser.uid,
+                        word: item.word,
+                        meaning: item.meaning,
+                        status: 'unlearned',
+                        reviewCount: 0,
+                        correctCount: 0,
+                        category: activeEditCategory,
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    });
+                }
+
+                showBanner(`${extractedWords.length}件の単語を自動登録しました！`, "success");
+                await loadWords();
+            } catch (e) {
+                console.error(e);
+                showBanner("AI解析に失敗しました: " + e.message, "error");
+            } finally {
+                document.getElementById('ai-loading').style.display = 'none';
+                event.target.value = '';
+            }
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        async function callGeminiVisionAPI(apiKey, base64Data, mimeType) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+            const promptText = `
+            あなたは優秀な語学学習アシスタントです。提供された画像またはPDFドキュメントから、学習すべき重要な単語や熟語を抽出してください。
+            【ルール】
+            1. 抽出した各単語について、表面用の「word（単語・フレーズ）」と、裏面用の「meaning（主な意味を2〜3つ、カンマ区切りなどで簡潔に）」を作成してください。
+            2. 必ず以下のJSON形式の配列のみ（Markdownのコードブロック \`\`\`json ... \`\`\` を含む）で出力してください。余分な解説文は不要です。
+            [
+              { "word": "sample", "meaning": "見本、サンプル、見本品" },
+              { "word": "evaluate", "meaning": "評価する、査定する、見積もる" }
+            ]
+            `;
+
+            const requestBody = {
+                contents: [{
+                    parts: [
+                        { text: promptText },
+                        { inlineData: { mimeType: mimeType === 'application/pdf' ? 'application/pdf' : mimeType, data: base64Data } }
+                    ]
+                }]
+            };
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                const errJson = await response.json();
+                throw new Error(errJson.error?.message || 'APIリクエストに失敗しました');
+            }
+
+            const data = await response.json();
+            const textResponse = data.candidates[0].content.parts[0].text;
+            const jsonMatch = textResponse.match(/\[[\s\S]*\]/);
+            if (!jsonMatch) {
+                throw new Error("AIからのレスポンスをJSON形式にパースできませんでした。");
+            }
+            return JSON.parse(jsonMatch[0]);
         }
         async function loadWords() {
             if (!currentUser) return;

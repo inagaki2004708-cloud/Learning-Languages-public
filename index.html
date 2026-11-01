@@ -110,13 +110,13 @@
     <div class="card-inner">              
        <div class="card-front">
             <div class="word-text" id="card-front-text">読み込み中...</div>
-            <!-- 表面用：学習言語で読み上げるボタン -->
-            <button class="btn btn-secondary" onclick="event.stopPropagation(); speakCardText('front');" style="padding: 6px 16px; font-size: 0.9rem; border-radius: 20px; margin-top:15px;">🔊 発音を聴く</button>
+            <!-- 表面用ボタン：学習言語で発音を聴く -->
+            <button class="btn btn-secondary" onclick="event.stopPropagation(); speakWord();" style="padding: 6px 16px; font-size: 0.9rem; border-radius: 20px; margin-top:15px;">🔊 発音を聴く</button>
         </div>
         <div class="card-back">
             <div class="meaning-text" id="card-back-text">単語</div>
-            <!-- 裏面用：日本語で読み上げるボタン -->
-            <button class="btn btn-secondary" onclick="event.stopPropagation(); speakCardText('back');" style="padding: 6px 16px; font-size: 0.9rem; border-radius: 20px; margin-top:15px;">🔊 発音を聴く</button>
+            <!-- 裏面用ボタン：裏面でも学習言語で発音を聴く -->
+            <button class="btn btn-secondary" onclick="event.stopPropagation(); speakWord();" style="padding: 6px 16px; font-size: 0.9rem; border-radius: 20px; margin-top:15px;">🔊 発音を聴く</button>
         </div>
     </div>
 </div>
@@ -737,7 +737,7 @@ window.speakWord = speakWord;
         function escapeHtml(str) { return (!str) ? '' : str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
         function escapeJs(str) { return (!str) ? '' : str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"'); }
 
-        window.loginWithGoogle = loginWithGoogle; window.logout = logout; window.showView = showView; window.toggleAnswer = toggleAnswer; window.setWordStatus = setWordStatus; window.nextCard = nextCard; window.speakCurrentWord = speakCurrentWord; window.handleAddWord = handleAddWord; window.editWord = editWord; window.deleteWord = deleteWord; window.cancelEditMode = cancelEditMode; window.handleLangChange = handleLangChange;
+        window.loginWithGoogle = loginWithGoogle; window.logout = logout; window.showView = showView; window.toggleAnswer = toggleAnswer; window.setWordStatus = setWordStatus; window.nextCard = nextCard; window.speakWord = speakWord; window.handleAddWord = handleAddWord; window.editWord = editWord; window.deleteWord = deleteWord; window.cancelEditMode = cancelEditMode; window.handleLangChange = handleLangChange;
         
         window.openCategoryQuizSelect = openCategoryQuizSelect;
         window.closeModals = closeModals;

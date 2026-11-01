@@ -841,7 +841,6 @@ window.speakCard = speakCard;
                 div.className = 'folder-item' + (key === 'cat_default' ? ' default' : '');
                 const count = wordsData.filter(w => w.category === key).length;
                 div.innerHTML = `${getCatName(key)} <br><span style="font-size:0.75rem; color:#888;">${count} 項目</span>`;
-                div.onclick = () => openCategoryEdit(key);
                 container.appendChild(div);
             });
         }

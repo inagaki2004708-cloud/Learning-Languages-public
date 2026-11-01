@@ -110,16 +110,17 @@
     <div class="card-inner">              
        <div class="card-front">
             <div class="word-text" id="card-front-text">読み込み中...</div>
-            <!-- 表面用ボタン：speakWord() に修正 -->
-            <button class="btn btn-secondary" onclick="event.stopPropagation(); speakWord();" style="padding: 6px 16px; font-size: 0.9rem; border-radius: 20px; margin-top:15px;">🔊 発音を聴く</button>
+            <!-- 表面用ボタン：'front' を渡す -->
+            <button class="btn btn-secondary" onclick="event.stopPropagation(); speakCard('front');" style="padding: 6px 16px; font-size: 0.9rem; border-radius: 20px; margin-top:15px;">🔊 発音を聴く</button>
         </div>
         <div class="card-back">
             <div class="meaning-text" id="card-back-text">単語</div>
-            <!-- 裏面用ボタン：speakWord() に修正 -->
-            <button class="btn btn-secondary" onclick="event.stopPropagation(); speakWord();" style="padding: 6px 16px; font-size: 0.9rem; border-radius: 20px; margin-top:15px;">🔊 発音を聴く</button>
+            <!-- 裏面用ボタン：'back' を渡す -->
+            <button class="btn btn-secondary" onclick="event.stopPropagation(); speakCard('back');" style="padding: 6px 16px; font-size: 0.9rem; border-radius: 20px; margin-top:15px;">🔊 発音を聴く</button>
         </div>
     </div>
-</div>        <div class="controls" id="card-controls" style="display: flex; gap: 10px;">
+</div>
+        <div class="controls" id="card-controls" style="display: flex; gap: 10px;">
             <button class="btn btn-success" style="flex:1; font-size: 1.1rem; padding: 12px;" onclick="setWordStatus('correct')">⭕ 正解</button>
             <button class="btn btn-danger" style="flex:1; font-size: 1.1rem; padding: 12px;" onclick="setWordStatus('wrong')">❌ 不正解</button>
         </div>
@@ -413,10 +414,13 @@
             renderCard();
         }
 
-         // 表面・裏面どちらからでも「学習したい言語」で単語を読み上げる関数
-function speakWord() {
+         // 押されたボタンの面（side）に応じて、表面または裏面のテキストを学習言語で読み上げる関数
+function speakCard(side) {
     if (quizWords.length === 0) return;
     const current = quizWords[currentIndex];
+    
+    // 'front' なら表面の単語、'back' なら裏面のテキストを取得
+    const textToSpeak = (side === 'front') ? current.word : current.meaning;
     
     // languages.js から現在の言語設定（例: 英語なら 'en-US'）を取得
     const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
@@ -425,8 +429,7 @@ function speakWord() {
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         
-        // 常に学習言語の単語（current.word）を読み上げる
-        const utr = new SpeechSynthesisUtterance(current.word);
+        const utr = new SpeechSynthesisUtterance(textToSpeak);
         utr.lang = targetLang;
         
         // ネイティブスピーカーの音声（ボイス）を選択する処理
@@ -449,7 +452,7 @@ function speakWord() {
 }
 
 // グローバル関数として登録
-window.speakWord = speakWord;
+window.speakCard = speakCard;
 
         function editCurrentCard() {
             if (quizWords.length === 0) return;
@@ -736,7 +739,7 @@ window.speakWord = speakWord;
         function escapeHtml(str) { return (!str) ? '' : str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
         function escapeJs(str) { return (!str) ? '' : str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"'); }
 
-        window.loginWithGoogle = loginWithGoogle; window.logout = logout; window.showView = showView; window.toggleAnswer = toggleAnswer; window.setWordStatus = setWordStatus; window.nextCard = nextCard; window.speakWord = speakWord; window.handleAddWord = handleAddWord; window.editWord = editWord; window.deleteWord = deleteWord; window.cancelEditMode = cancelEditMode; window.handleLangChange = handleLangChange;
+        window.loginWithGoogle = loginWithGoogle; window.logout = logout; window.showView = showView; window.toggleAnswer = toggleAnswer; window.setWordStatus = setWordStatus; window.nextCard = nextCard; window.speakCard = speakCard; window.handleAddWord = handleAddWord; window.editWord = editWord; window.deleteWord = deleteWord; window.cancelEditMode = cancelEditMode; window.handleLangChange = handleLangChange;
         
         window.openCategoryQuizSelect = openCategoryQuizSelect;
         window.closeModals = closeModals;

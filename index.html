@@ -846,15 +846,7 @@ window.speakCard = speakCard;
             });
         }
 
-        function openCategoryEdit(key) {
-            activeEditCategory = key;
-            cancelEditMode(); 
-            document.getElementById('modal-cat-edit').style.display = 'flex';
-            document.getElementById('cat-edit-title').value = getCatName(key);
-            renderWordList();
-        }
-
-        function renderWordList() {
+                function renderWordList() {
             const container = document.getElementById('modal-word-list-container');
             container.innerHTML = '';
             

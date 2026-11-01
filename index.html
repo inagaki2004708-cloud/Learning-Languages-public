@@ -538,6 +538,7 @@ async function resetCurrentCategory() {
             
             setQuizMode(currentMode);
             updateChart();
+            renderFolders();
             if (document.getElementById('modal-cat-edit').style.display === 'flex') {
                 renderWordList(); 
             }

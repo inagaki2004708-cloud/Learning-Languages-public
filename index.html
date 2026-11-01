@@ -258,26 +258,26 @@
         }
 
         onAuthStateChanged(auth, async (user) => {
-            showView('main-view'); // 常にメイン画面を表示
+    if (user) {
+        currentUser = user;
+        showView('main-view'); // ログインしている場合はメイン画面を表示
+        const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
+        document.getElementById('study-title').textContent = langConfig.title;
+        document.getElementById('view-title').textContent = langConfig.title;
+        document.getElementById('input-word').placeholder = `学習項目を入力 (${langConfig.label})`;
 
-            if (user) {
-                currentUser = user;
-                const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
-                document.getElementById('study-title').textContent = langConfig.title;
-                document.getElementById('view-title').textContent = langConfig.title;
-                document.getElementById('input-word').placeholder = `学習項目を入力 (${langConfig.label})`;
-
-                await loadCategoryNames();
-                await loadWords();
-            } else {
-                currentUser = null;
-                wordsData = [];
-                quizWords = [];
-                renderCard();
-                updateChart();
-                renderFolders();
-            }
-        });
+        await loadCategoryNames();
+        await loadWords();
+    } else {
+        currentUser = null;
+        showView('login-view'); // ログインしていない場合はログイン画面を表示
+        wordsData = [];
+        quizWords = [];
+        renderCard();
+        updateChart();
+        renderFolders();
+    }
+});
 
         async function loginWithGoogle() {
             try {

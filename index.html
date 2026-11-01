@@ -179,17 +179,19 @@
                 </div>
             </div>
             <div class="form-group" style="margin-top: 15px; background: #eef2f7; border: 2px dashed #007bff;">
-                <h3 style="margin: 0 0 5px 0; font-size: 1.1rem; color:#007bff;">🤖 画像・PDFから自動生成</h3>
-                <p style="font-size: 0.8rem; color: #555; margin-bottom: 10px;">教科書や資料の画像・PDFを選ぶと、AIが単語と主な意味（2〜3つ）を自動抽出します。</p>
-<div style="margin-bottom: 8px;">
-                    <button type="button" class="btn btn-secondary" onclick="toggleApiKeyInput()" style="padding: 4px 10px; font-size: 0.75rem; background-color: #6c757d; margin: 0 0 5px 0;">⚙️ APIキー設定・変更</button>
-                    <input type="password" id="gemini-api-key" placeholder="Gemini APIキーを入力" style="display: none; margin-bottom: 8px; font-size: 0.9rem;">
-                </div>
-                <input type="password" id="gemini-api-key" placeholder="Gemini APIキーを入力 (初回のみ)" style="margin-bottom: 8px; font-size: 0.9rem;">
-                <input type="file" id="ai-file-input" accept="image/*, application/pdf" style="display: none;" onchange="handleAiFileSelected(event)">
-                <button class="btn btn-primary" style="width: 100%; margin: 0;" onclick="document.getElementById('ai-file-input').click()">📁 ファイルを選択して自動作成</button>
-                <div id="ai-loading" style="display: none; text-align: center; margin-top: 10px; font-weight: bold; color: #007bff;">解析中... ⏳ しばらくお待ちください</div>
-            </div>
+    <h3 style="margin: 0 0 5px 0; font-size: 1.1rem; color:#007bff;">🤖 画像・PDFから自動生成</h3>
+    <p style="font-size: 0.8rem; color: #555; margin-bottom: 10px;">教科書や資料の画像・PDFを選ぶと、AIが単語と主な意味（2〜3つ）を自動抽出します。</p>
+    
+    <!-- APIキー設定ボタンと入力欄（1つに統一） -->
+    <div style="margin-bottom: 8px;">
+        <button type="button" class="btn btn-secondary" onclick="toggleApiKeyInput()" style="padding: 4px 10px; font-size: 0.75rem; background-color: #6c757d; margin: 0 0 5px 0;">⚙️ APIキー設定・変更</button>
+        <input type="password" id="gemini-api-key" placeholder="Gemini APIキーを入力" style="display: none; width: 100%; box-sizing: border-box; margin-bottom: 8px; font-size: 0.9rem; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+    </div>
+
+    <input type="file" id="ai-file-input" accept="image/*, application/pdf" style="display: none;" onchange="handleAiFileSelected(event)">
+    <button class="btn btn-primary" style="width: 100%; margin: 0;" onclick="document.getElementById('ai-file-input').click()">📁 ファイルを選択して自動作成</button>
+    <div id="ai-loading" style="display: none; text-align: center; margin-top: 10px; font-weight: bold; color: #007bff;">解析中... ⏳ しばらくお待ちください</div>
+</div>
             <div class="word-list" id="modal-word-list-container"></div>
         </div>
     </div>
@@ -362,9 +364,12 @@ async function resetCurrentCategory() {
                 showBanner("初期化に失敗しました", "error");
             }
         }
-        // ==========================================
-        // 2. AI自動生成時の重複チェック＆除外修正
-        // ==========================================
+        function toggleApiKeyInput() {
+            const keyInput = document.getElementById('gemini-api-key');
+            if (keyInput) {
+                keyInput.style.display = keyInput.style.display === 'none' ? 'block' : 'none';
+            }
+        }
         async function handleAiFileSelected(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -965,6 +970,8 @@ window.speakCard = speakCard;
         window.saveQuickEdit = saveQuickEdit;
         window.openMoveCategoryModal = openMoveCategoryModal;
         window.moveCurrentCardCategory = moveCurrentCardCategory;
+        window.toggleApiKeyInput = toggleApiKeyInput;
+       window.handleAiFileSelected = handleAiFileSelected;
         
         function setQuizMode(mode, categoryKey = null) {
             currentMode = mode;

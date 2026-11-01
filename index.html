@@ -364,6 +364,9 @@
 
             if (currentIndex >= quizWords.length) currentIndex = 0;
             const current = quizWords[currentIndex];
+if (current && current.id) {
+                localStorage.setItem(`last_card_id_${currentLang}_${currentMode}`, current.id);
+            }
             
             // 表面に「意味（日本語）」、裏面に「単語（英語）」を設定
             document.getElementById('card-front-text').textContent = current.word; 
@@ -770,7 +773,24 @@ window.speakCard = speakCard;
                 quizWords = [...wordsData];
             }
 
-            currentIndex = 0;
+            // ==========================================
+            // ★【追加・修正】最後に学習したカードの位置を復元する処理
+            // ==========================================
+            currentIndex = 0; // デフォルトは先頭
+            
+            if (quizWords.length > 0) {
+                const savedCardId = localStorage.getItem(`last_card_id_${currentLang}_${currentMode}`);
+                if (savedCardId) {
+                    // 保存されたIDが現在の quizWords の中に存在するか探す
+                    const foundIndex = quizWords.findIndex(w => w.id === savedCardId);
+                    if (foundIndex !== -1) {
+                        // 存在する場合は、その位置からスタート
+                        currentIndex = foundIndex;
+                    }
+                }
+            }
+            // ==========================================
+
             renderCard();
         }
         window.setQuizMode = setQuizMode; 

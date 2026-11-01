@@ -939,12 +939,25 @@ window.speakCard = speakCard;
             if (target) target.style.display = 'block';
         }
 
+        let bannerTimer = null; // タイマーIDを保持する変数
+
         function showBanner(message, type = 'success') {
             const banner = document.getElementById('banner');
             if (banner) {
+                // 既に表示タイマーが動いている場合はクリアする
+                if (bannerTimer) {
+                    clearTimeout(bannerTimer);
+                    bannerTimer = null;
+                }
+
                 banner.textContent = message;
                 banner.className = `banner ${type} show`;
-                setTimeout(() => { banner.classList.remove('show'); }, 3000);
+                
+                // 3秒後に非表示にする
+                bannerTimer = setTimeout(() => {
+                    banner.classList.remove('show');
+                    bannerTimer = null;
+                }, 3000);
             }
         }
 

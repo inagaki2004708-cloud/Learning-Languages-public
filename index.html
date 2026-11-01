@@ -414,29 +414,20 @@
             renderCard();
         }
 
-         // 表面・裏面を判定して言語を切り替えて読み上げる関数
-function speakCardText(target) {
+         // 表面・裏面どちらからでも「学習したい言語」で単語を読み上げる関数
+function speakWord() {
     if (quizWords.length === 0) return;
     const current = quizWords[currentIndex];
-    const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
     
-    let textToSpeak = '';
-    let targetLang = '';
-
-    if (target === 'front') {
-        // 表面（学習言語の単語）
-        textToSpeak = current.word;
-        targetLang = langConfig.speechLang || 'en-US'; // languages.js で設定された学習言語
-    } else {
-        // 裏面（日本語の意味）
-        textToSpeak = current.meaning;
-        targetLang = 'ja-JP'; // 固定で日本語
-    }
-
+    // languages.js から現在の言語設定（例: 英語なら 'en-US'）を取得
+    const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
+    const targetLang = langConfig.speechLang || 'en-US';
+    
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         
-        const utr = new SpeechSynthesisUtterance(textToSpeak);
+        // 常に学習言語の単語（current.word）を読み上げる
+        const utr = new SpeechSynthesisUtterance(current.word);
         utr.lang = targetLang;
         
         // ネイティブスピーカーの音声（ボイス）を選択する処理
@@ -458,8 +449,8 @@ function speakCardText(target) {
     }
 }
 
-// 外部（HTMLのonclickなど）から呼び出せるようにウィンドウオブジェクトに登録
-window.speakCardText = speakCardText;
+// グローバル関数として登録
+window.speakWord = speakWord;
 
         function editCurrentCard() {
             if (quizWords.length === 0) return;

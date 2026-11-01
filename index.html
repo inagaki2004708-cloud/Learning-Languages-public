@@ -107,17 +107,19 @@
         </div>
 
         <div class="card-container" id="word-card" onclick="toggleAnswer()">
-            <div class="card-inner">              
-               <div class="card-front">
-                    <div class="word-text" id="card-front-text">読み込み中...</div>
-                </div>
-                <div class="card-back">
-                    <div class="meaning-text" id="card-back-text">単語</div>
-                    <button class="btn btn-secondary" onclick="event.stopPropagation(); speakCurrentWord();" style="padding: 6px 16px; font-size: 0.9rem; border-radius: 20px; margin-top:15px;">🔊 発音を聴く</button>
-                </div>
-            </div>
+    <div class="card-inner">              
+       <div class="card-front">
+            <div class="word-text" id="card-front-text">読み込み中...</div>
+            <!-- 表面用：学習言語で読み上げるボタン -->
+            <button class="btn btn-secondary" onclick="event.stopPropagation(); speakCardText('front');" style="padding: 6px 16px; font-size: 0.9rem; border-radius: 20px; margin-top:15px;">🔊 発音を聴く</button>
         </div>
-
+        <div class="card-back">
+            <div class="meaning-text" id="card-back-text">単語</div>
+            <!-- 裏面用：日本語で読み上げるボタン -->
+            <button class="btn btn-secondary" onclick="event.stopPropagation(); speakCardText('back');" style="padding: 6px 16px; font-size: 0.9rem; border-radius: 20px; margin-top:15px;">🔊 発音を聴く</button>
+        </div>
+    </div>
+</div>
         <div class="controls" id="card-controls" style="display: flex; gap: 10px;">
             <button class="btn btn-success" style="flex:1; font-size: 1.1rem; padding: 12px;" onclick="setWordStatus('correct')">⭕ 正解</button>
             <button class="btn btn-danger" style="flex:1; font-size: 1.1rem; padding: 12px;" onclick="setWordStatus('wrong')">❌ 不正解</button>
@@ -412,49 +414,53 @@
             renderCard();
         }
 
-         function speakCurrentWord() {
-            if (quizWords.length === 0) return;
-            // 現在の言語設定を取得（例：英語なら 'en-US'、フランス語なら 'fr-FR' など）
-            const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
-            
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                
-                // 裏面に表示されているテキストを取得
-                const backText = document.getElementById('card-back-text').textContent;
-                const utr = new SpeechSynthesisUtterance(backText);
-                
-                // ターゲットとなる言語コード
-                const targetLang = langConfig.speechLang || 'en-US';
-                utr.lang = targetLang;
-                
-                // === ここから追加：ネイティブスピーカーの音声を選択する処理 ===
-                // ブラウザにインストールされているすべての音声リストを取得
-                const voices = window.speechSynthesis.getVoices();
-                
-                if (voices.length > 0) {
-                    // 1. まず、言語コードが完全に一致するネイティブ音声を探す（例: 'en-US'）
-                    let selectedVoice = voices.find(voice => voice.lang === targetLang);
-                    
-                    // 2. 完全一致が見つからない場合、言語グループが一致するものを探す（例: 'en-US'がない場合 'en-GB' など 'en' を探す）
-                    if (!selectedVoice) {
-                        const shortLang = targetLang.split('-')[0];
-                        selectedVoice = voices.find(voice => voice.lang.startsWith(shortLang));
-                    }
-                    
-                    // 3. 適切な音声が見つかれば、それを明示的にセットする
-                    if (selectedVoice) {
-                        utr.voice = selectedVoice;
-                    }
-                }
-                // ==========================================================
-                
-                // 音声を再生
-                window.speechSynthesis.speak(utr);
-            } else {
-                showBanner("音声読み上げ非対応ブラウザです", "error");
+         // 表面・裏面を判定して言語を切り替えて読み上げる関数
+function speakCardText(target) {
+    if (quizWords.length === 0) return;
+    const current = quizWords[currentIndex];
+    const langConfig = LANGUAGES[currentLang] || LANGUAGES.en;
+    
+    let textToSpeak = '';
+    let targetLang = '';
+
+    if (target === 'front') {
+        // 表面（学習言語の単語）
+        textToSpeak = current.word;
+        targetLang = langConfig.speechLang || 'en-US'; // languages.js で設定された学習言語
+    } else {
+        // 裏面（日本語の意味）
+        textToSpeak = current.meaning;
+        targetLang = 'ja-JP'; // 固定で日本語
+    }
+
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        
+        const utr = new SpeechSynthesisUtterance(textToSpeak);
+        utr.lang = targetLang;
+        
+        // ネイティブスピーカーの音声（ボイス）を選択する処理
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+            let selectedVoice = voices.find(voice => voice.lang === targetLang);
+            if (!selectedVoice) {
+                const shortLang = targetLang.split('-')[0];
+                selectedVoice = voices.find(voice => voice.lang.startsWith(shortLang));
+            }
+            if (selectedVoice) {
+                utr.voice = selectedVoice;
             }
         }
+        
+        window.speechSynthesis.speak(utr);
+    } else {
+        showBanner("音声読み上げ非対応ブラウザです", "error");
+    }
+}
+
+// 外部（HTMLのonclickなど）から呼び出せるようにウィンドウオブジェクトに登録
+window.speakCardText = speakCardText;
+
         function editCurrentCard() {
             if (quizWords.length === 0) return;
             const current = quizWords[currentIndex];

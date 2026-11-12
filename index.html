@@ -454,6 +454,7 @@ async function resetCurrentCategory() {
             activeEditCategory = key;
             cancelEditMode(); 
             document.getElementById('modal-cat-edit').style.display = 'flex';
+            history.pushState({ modal: true }, '', ''); // ◀ 【追加】
             document.getElementById('cat-edit-title').value = getCatName(key);
 
             // 保存済みのAPIキーがあれば入力欄に自動補完
@@ -671,10 +672,16 @@ window.speakCard = speakCard;
             document.getElementById('quick-edit-word').value = current.word;
             document.getElementById('quick-edit-meaning').value = current.meaning;
             document.getElementById('quick-edit-modal').style.display = 'flex';
+            history.pushState({ modal: true }, '', ''); // ◀ 【追加】
         }
 
         function closeQuickEdit() {
+            const isOpen = document.getElementById('quick-edit-modal').style.display === 'flex';
             document.getElementById('quick-edit-modal').style.display = 'none';
+            // ▼ 【追加】
+            if (isOpen && history.state && history.state.modal) {
+                history.back();
+            }
         }
 
         async function saveQuickEdit() {
@@ -734,6 +741,7 @@ window.speakCard = speakCard;
                 container.appendChild(btn);
             });
             document.getElementById('modal-cat-move').style.display = 'flex';
+            history.pushState({ modal: true }, '', ''); // ◀ 【追加】
         }
 
         async function moveCurrentCardCategory(newCategoryKey) {
@@ -915,11 +923,16 @@ window.speakCard = speakCard;
             
             if(!hasCat) container.innerHTML = '<p style="text-align:center; color:#666;">学習可能なデータがありません</p>';
             document.getElementById('modal-cat-select').style.display = 'flex';
+            history.pushState({ modal: true }, '', ''); // ◀ 【追加】
         }
-
         function closeModals() {
+            const isOpen = Array.from(document.querySelectorAll('.modal-overlay')).some(m => m.style.display === 'flex');
             document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
             renderFolders(); 
+            // ▼ 【追加】モーダルが開いていた状態からボタンで閉じた場合、履歴を戻す
+            if (isOpen && history.state && history.state.modal) {
+                history.back();
+            }
         }
 
         function updateChart() {
@@ -1068,6 +1081,16 @@ window.speakCard = speakCard;
             renderCard();
         }
         window.setQuizMode = setQuizMode;
+
+        // ▼ 【追加ここから】モーダルが開いている時のみ、バックボタンでモーダルを閉じる
+        window.addEventListener('popstate', (event) => {
+            const isModalOpen = Array.from(document.querySelectorAll('.modal-overlay')).some(m => m.style.display === 'flex');
+            if (isModalOpen) {
+                document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+                renderFolders();
+            }
+        });
+        // ▲ 【追加ここまで】
     </script>
 
     <script>

@@ -101,6 +101,13 @@
             <button class="btn btn-secondary" id="btn-mode-review" style="flex:1; padding: 10px 5px; font-size: 0.85rem;" onclick="setQuizMode('review')">復習</button>
         </div>
         
+        <!-- ▼ 【追加ここから】カテゴリ学習時のサブモード切替ボタン行 -->
+        <div class="controls" id="category-submode-controls" style="display: none; margin-bottom: 5px; gap: 5px;">
+            <button class="btn btn-primary" id="btn-cat-all" style="flex:1; padding: 8px 5px; font-size: 0.8rem;" onclick="setCategorySubMode('cat-all')">カテゴリ総復習</button>
+            <button class="btn btn-secondary" id="btn-cat-wrong" style="flex:1; padding: 8px 5px; font-size: 0.8rem;" onclick="setCategorySubMode('cat-wrong')">不正解を復習</button>
+        </div>
+        <!-- ▲ 【追加ここまで】 -->
+
         <div class="controls" id="current-card-edit-controls" style="margin-bottom: 10px; gap: 5px;">
             <button class="btn btn-secondary" style="flex:1; font-size: 0.8rem; padding: 8px 5px; background-color: #888;" onclick="editCurrentCard()">✏️ 現在のカードを編集</button>
             <button class="btn btn-danger" style="flex:1; font-size: 0.8rem; padding: 8px 5px; background-color: #d9534f;" onclick="deleteCurrentCard()">🗑️ 現在のカードを削除</button>
@@ -979,34 +986,79 @@ window.speakCard = speakCard;
         window.toggleApiKeyInput = toggleApiKeyInput;
        window.handleAiFileSelected = handleAiFileSelected;
        window.openCategoryEdit = openCategoryEdit;
+       window.setCategorySubMode = setCategorySubMode; // ← ここで新しくグローバル登録
         
+        // ▼ 【追加ここから】カテゴリ学習用パラメータとヘルパー関数
+        let activeCategoryKey = null;           // 選択中のカテゴリキー
+        let currentCategorySubMode = 'cat-all'; // 'cat-all' (総復習) または 'cat-wrong' (不正解)
+
+        function setCategorySubMode(subMode) {
+            currentCategorySubMode = subMode;
+            updateCategorySubModeUI();
+            applyCategoryFilter();
+            currentIndex = 0;
+            renderCard();
+        }
+
+        function updateCategorySubModeUI() {
+            const btnAll = document.getElementById('btn-cat-all');
+            const btnWrong = document.getElementById('btn-cat-wrong');
+            if (btnAll && btnWrong) {
+                btnAll.className = currentCategorySubMode === 'cat-all' ? 'btn btn-primary' : 'btn btn-secondary';
+                btnWrong.className = currentCategorySubMode === 'cat-wrong' ? 'btn btn-primary' : 'btn btn-secondary';
+            }
+        }
+
+        function applyCategoryFilter() {
+            if (!activeCategoryKey) return;
+            const baseCatWords = wordsData.filter(w => w.category === activeCategoryKey);
+            if (currentCategorySubMode === 'cat-wrong') {
+                quizWords = baseCatWords.filter(w => w.status === 'wrong');
+            } else {
+                quizWords = baseCatWords; // カテゴリ総復習（全単語）
+            }
+        }
+        // ▲ 【追加ここまで】
+
         function setQuizMode(mode, categoryKey = null) {
             currentMode = mode;
             
+            // カテゴリ学習の時だけサブモードボタンを表示
+            const subControls = document.getElementById('category-submode-controls');
+            if (subControls) {
+                subControls.style.display = (mode === 'category') ? 'flex' : 'none';
+            }
+
             document.getElementById('btn-mode-all').className = mode === 'all' ? 'btn btn-primary' : 'btn btn-secondary';
             document.getElementById('btn-mode-cat').className = mode === 'category' ? 'btn btn-primary' : 'btn btn-secondary';
             document.getElementById('btn-mode-review').className = mode === 'review' ? 'btn btn-primary' : 'btn btn-secondary';
 
-            if (mode === 'category' && categoryKey) {
-                quizWords = wordsData.filter(w => w.category === categoryKey);
+            if (mode === 'category') {
+                if (categoryKey) {
+                    activeCategoryKey = categoryKey;
+                    currentCategorySubMode = 'cat-all'; // デフォルトは「カテゴリ総復習」
+                }
+                updateCategorySubModeUI();
+                applyCategoryFilter();
             } else if (mode === 'review') {
-                quizWords = wordsData.filter(w => w.status === 'wrong' || !w.status || w.status === 'unlearned');
+                activeCategoryKey = null;
+                // カテゴリに縛られず、不正解の単語を全て出題
+                quizWords = wordsData.filter(w => w.status === 'wrong');
             } else {
+                activeCategoryKey = null;
                 quizWords = [...wordsData];
             }
 
             // ==========================================
-            // ★【追加・修正】最後に学習したカードの位置を復元する処理
+            // ★ 最後に学習したカードの位置を復元する処理
             // ==========================================
             currentIndex = 0; // デフォルトは先頭
             
             if (quizWords.length > 0) {
-                const savedCardId = localStorage.getItem(`last_card_id_${currentLang}_${currentMode}`);
+                const savedCardId = localStorage.getItem(`last_card_id_${currentLang}_${currentMode}_${activeCategoryKey || 'all'}`);
                 if (savedCardId) {
-                    // 保存されたIDが現在の quizWords の中に存在するか探す
                     const foundIndex = quizWords.findIndex(w => w.id === savedCardId);
                     if (foundIndex !== -1) {
-                        // 存在する場合は、その位置からスタート
                         currentIndex = foundIndex;
                     }
                 }
@@ -1015,7 +1067,7 @@ window.speakCard = speakCard;
 
             renderCard();
         }
-        window.setQuizMode = setQuizMode; 
+        window.setQuizMode = setQuizMode;
     </script>
 
     <script>
